@@ -1,8 +1,10 @@
+
+
 const CACHE_NAME = 'silverback-mma-cache-v1';
 const URLS_TO_CACHE = [
   '/',
-  '/index.tsx',
-  'https://cdn-tailwindcss.vercel.app/',
+  '/index.html',
+  'https://cdn.tailwindcss.com',
 ];
 
 // Install event: Caches the app shell
@@ -38,6 +40,14 @@ self.addEventListener('activate', event => {
 
 // Fetch event: Serves content from cache first (cache-first strategy)
 self.addEventListener('fetch', event => {
+  // For navigation requests, always try network first, then fallback to cache.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+    
   event.respondWith(
     caches.match(event.request)
       .then(response => {

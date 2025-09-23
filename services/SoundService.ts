@@ -1,26 +1,63 @@
-import { SoundType, SoundSetting } from '../types';
+import { SoundSetting, SoundType } from '../types';
 
-class SoundPlayer {
-    private audioContext: AudioContext | null = null;
-    private isInitialized: boolean = false;
+class SoundService {
+    private static audioContext: AudioContext | null = null;
 
-    public init() {
-        if (!this.isInitialized && typeof window !== 'undefined') {
+    private static init() {
+        if (!this.audioContext && typeof window !== 'undefined') {
             try {
                 this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                this.isInitialized = true;
             } catch (e) {
-                console.error("Web Audio API is not supported in this browser", e);
+                console.error("Web Audio API is not supported.", e);
             }
         }
     }
-    
-    private async playCustomSound(dataUrl: string, volume: number) {
+
+    private static async playBeep(volume: number) {
         if (!this.audioContext) return;
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
 
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        gainNode.gain.value = volume;
+        oscillator.frequency.value = 880; // A5 note
+        oscillator.type = 'sine';
+
+        oscillator.start();
+        oscillator.stop(this.audioContext.currentTime + 0.1);
+    }
+    
+    private static async playBell(volume: number) {
+        if (!this.audioContext) return;
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.frequency.value = 1046.50; // C6 note
+        oscillator.type = 'sine';
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 1);
+    }
+    
+    private static async playCustomSound(dataUrl: string, volume: number) {
+        if (!this.audioContext || !dataUrl) return;
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
         try {
             const response = await fetch(dataUrl);
             const arrayBuffer = await response.arrayBuffer();
@@ -28,94 +65,42 @@ class SoundPlayer {
 
             const source = this.audioContext.createBufferSource();
             const gainNode = this.audioContext.createGain();
-
+            
             source.buffer = audioBuffer;
+            gainNode.gain.value = volume;
+
             source.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
             
-            const maxGain = 0.8;
-            gainNode.gain.setValueAtTime(volume * maxGain, this.audioContext.currentTime);
-
             source.start(0);
-        } catch(e) {
-            console.error("Error playing custom sound:", e);
+
+        } catch (error) {
+            console.error('Error playing custom sound:', error);
         }
     }
 
-
-    private playTone(frequency: number, duration: number, volume: number, type: OscillatorType = 'sine') {
-        if (!this.audioContext || this.audioContext.state === 'suspended') {
-            this.audioContext?.resume();
-        }
+    public static playSound(setting: SoundSetting) {
+        this.init();
         if (!this.audioContext) return;
 
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        const maxGain = 0.8; // Giới hạn để tránh rè tiếng ở mức âm lượng cao nhất
-        gainNode.gain.setValueAtTime(volume * maxGain, this.audioContext.currentTime);
-
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-        
-        oscillator.start(this.audioContext.currentTime);
-        oscillator.stop(this.audioContext.currentTime + duration);
-    }
-
-    public playSound(setting: SoundSetting) {
-        if (!this.isInitialized) this.init();
-        if (!this.audioContext) return;
-        
-        if (setting.type === SoundType.CUSTOM) {
-            if (setting.customSound) {
-                this.playCustomSound(setting.customSound, setting.volume);
-            }
-            return;
-        }
-        
         switch (setting.type) {
-            case SoundType.BELL:
-                this.playTone(880, 0.2, setting.volume, 'triangle');
-                setTimeout(() => this.playTone(880, 0.2, setting.volume, 'triangle'), 150);
-                break;
-            case SoundType.GONG:
-                this.playTone(440, 0.8, setting.volume, 'square');
-                break;
             case SoundType.BEEP:
-                this.playTone(1200, 0.15, setting.volume, 'sine');
+                this.playBeep(setting.volume);
                 break;
-            case SoundType.SYNTH:
-                this.playTone(660, 0.5, setting.volume, 'sawtooth');
+            case SoundType.BELL:
+                this.playBell(setting.volume);
                 break;
-            case SoundType.ALARM: // Piercing, alternating sound
-                this.playTone(2000, 0.15, setting.volume, 'sawtooth');
-                setTimeout(() => this.playTone(2500, 0.15, setting.volume, 'sawtooth'), 150);
+            case SoundType.CUSTOM:
+                if (setting.customSound) {
+                    this.playCustomSound(setting.customSound, setting.volume);
+                }
                 break;
-            case SoundType.BUZZER: // Annoying, harsh buzz
-                this.playTone(80, 0.5, setting.volume, 'square');
+            case SoundType.NONE:
+            default:
+                // Do nothing
                 break;
-            case SoundType.WHISTLE: // A referee whistle sound
-                this.playTone(3000, 0.5, setting.volume, 'sine');
-                break;
-            case SoundType.AIR_HORN: // Loud, multi-tone horn
-                this.playTone(300, 0.8, setting.volume, 'sawtooth');
-                this.playTone(378, 0.8, setting.volume, 'sawtooth'); // Dissonant frequency
-                break;
-        }
-    }
-    
-    public stop() {
-        if (this.audioContext && this.audioContext.state !== 'closed') {
-            this.audioContext.close().then(() => {
-                this.isInitialized = false;
-                this.audioContext = null;
-            });
         }
     }
 }
 
-const SoundService = new SoundPlayer();
 export default SoundService;

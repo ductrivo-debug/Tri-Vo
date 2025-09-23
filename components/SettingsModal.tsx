@@ -6,6 +6,10 @@ interface SettingsModalProps {
     currentSettings: WorkoutSettings;
     onSave: (newSettings: WorkoutSettings) => void;
     onClose: () => void;
+    onOpenSounds: () => void;
+    // FIX: Add missing props for opening music and plans modals.
+    onOpenMusic: () => void;
+    onOpenPlans: () => void;
 }
 
 // A reusable component for minute and second dropdowns
@@ -59,13 +63,31 @@ const TimeInput: React.FC<{
 };
 
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, onClose }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, onClose, onOpenSounds, onOpenMusic, onOpenPlans }) => {
     const [settings, setSettings] = useState<WorkoutSettings>(currentSettings);
     const { t } = useLanguage();
 
     const handleSave = () => {
         onSave(settings);
     };
+
+    const handleOpenSounds = () => {
+        onClose();
+        onOpenSounds();
+    };
+
+    // FIX: Add handlers to close the current modal and open the target modal.
+    const handleOpenMusic = () => {
+        onClose();
+        onOpenMusic();
+    };
+
+    const handleOpenPlans = () => {
+        onClose();
+        onOpenPlans();
+    };
+
+    const roundOptions = Array.from({ length: 100 }, (_, i) => i + 1);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -75,13 +97,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
                 <div className="space-y-4">
                     <div>
                         <label htmlFor="rounds" className="block text-sm font-medium text-slate-300 mb-1">{t('rounds')}</label>
-                        <input
-                            type="number"
+                        <select
                             id="rounds"
                             value={settings.rounds}
                             onChange={(e) => setSettings({ ...settings, rounds: parseInt(e.target.value, 10) || 1 })}
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        >
+                            {roundOptions.map(round => (
+                                <option key={round} value={round}>{round}</option>
+                            ))}
+                        </select>
                     </div>
                      <TimeInput 
                         label={t('workTime')}
@@ -109,6 +134,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
                         />
                     </div>
                 </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-700 space-y-2">
+                    <button onClick={handleOpenSounds} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('sounds')}</button>
+                    {/* FIX: Add buttons to open Music and Plans modals. */}
+                    <button onClick={handleOpenMusic} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('music')}</button>
+                    <button onClick={handleOpenPlans} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('plans')}</button>
+                </div>
+
 
                 <div className="mt-8 flex space-x-4">
                     <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">

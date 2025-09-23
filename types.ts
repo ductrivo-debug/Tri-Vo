@@ -11,14 +11,7 @@ export interface WorkoutSettings {
     workTime: number; // in seconds
     restTime: number; // in seconds
     longRestTime: number; // in seconds
-    longRestFrequency: number; // e.g., long rest every 4 rounds
-}
-
-export interface WorkoutSession {
-    date: string; // ISO string
-    duration: number; // in seconds
-    roundsCompleted: number;
-    settings: WorkoutSettings;
+    longRestFrequency: number; // after how many rounds
 }
 
 export enum ExerciseCategory {
@@ -29,28 +22,25 @@ export enum ExerciseCategory {
 export interface Exercise {
     id: string;
     name: string;
-    category: ExerciseCategory;
     description: string;
+    category: ExerciseCategory;
     imageUrl?: string;
+    rounds: number; // specific to this exercise in a playlist
+    duration: number; // in seconds, specific to this exercise
 }
 
 export enum SoundType {
-    BELL = 'BELL',
-    GONG = 'GONG',
     BEEP = 'BEEP',
-    SYNTH = 'SYNTH',
-    ALARM = 'ALARM',
-    BUZZER = 'BUZZER',
-    WHISTLE = 'WHISTLE',
-    AIR_HORN = 'AIR_HORN',
-    CUSTOM = 'CUSTOM'
+    BELL = 'BELL',
+    NONE = 'NONE',
+    CUSTOM = 'CUSTOM',
 }
 
 export interface SoundSetting {
     type: SoundType;
-    volume: number; // 0 to 1
-    customSound?: string; // Base64 Data URL
-    customSoundName?: string; // Original file name for display
+    volume: number;
+    customSound?: string; // Data URL
+    customSoundName?: string;
 }
 
 export interface SoundSettings {
@@ -59,8 +49,21 @@ export interface SoundSettings {
     warning: SoundSetting;
 }
 
+export interface WorkoutSession {
+    date: string; // ISO string
+    duration: number; // total seconds
+    roundsCompleted: number;
+    settings: WorkoutSettings;
+}
+
 export interface Track {
-  id: string;
-  name: string;
-  file: File;
+    id: string;
+    name: string;
+    file: File;
+}
+
+export interface WorkoutPlan {
+    id: string;
+    name: string;
+    exerciseIds: string[];
 }

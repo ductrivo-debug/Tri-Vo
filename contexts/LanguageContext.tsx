@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { translations } from '../translations';
 
@@ -37,10 +39,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const t = useCallback((key: keyof Translations | string, ...args: any[]): string => {
         const translationKey = key as keyof Translations;
-        let translation = translations[locale][translationKey] || translations['en'][translationKey] || key;
+        let translation = translations[locale]?.[translationKey] || translations['en']?.[translationKey] || key;
         
         if (typeof translation !== 'string') {
-            return key; // Return key if translation is not found or not a string
+            // Fix: Ensure the function always returns a string, even if the key is not found or is not a string itself.
+            return String(key);
         }
 
         if (args.length > 0) {
