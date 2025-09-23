@@ -95,8 +95,9 @@ const App: React.FC = () => {
     const intervalRef = useRef<number | null>(null);
     const musicServiceRef = useRef<MusicService | null>(null);
 
-    const currentExercise = playlist[ (currentRound - 1) % playlist.length ] || null;
-    const nextExercise = playlist[ currentRound % playlist.length ] || null;
+    const currentExercise = playlist && playlist.length > 0 ? playlist[ (currentRound - 1) % playlist.length ] : null;
+    const nextExercise = playlist && playlist.length > 0 ? playlist[ currentRound % playlist.length ] : null;
+
 
     // ======== EFFECTS & LOGIC ========
 
@@ -214,7 +215,7 @@ const App: React.FC = () => {
                 SoundService.playSound(soundSettings.start);
                 const nextRound = currentRound + 1;
                 setCurrentRound(nextRound);
-                const nextExerciseForWork = playlist[(nextRound - 1) % playlist.length];
+                const nextExerciseForWork = playlist && playlist.length > 0 ? playlist[(nextRound - 1) % playlist.length] : null;
                 setPhase(TimerPhase.WORK);
                 setTimeLeft(nextExerciseForWork?.duration ?? settings.workTime);
                 break;
@@ -294,10 +295,12 @@ const App: React.FC = () => {
                     currentRound={currentRound}
                     totalRounds={settings.rounds}
                 />
-                <ExerciseDisplay 
-                    exercise={(phase === TimerPhase.WORK || phase === TimerPhase.PREPARE || phase === TimerPhase.FINISHED) ? currentExercise : nextExercise}
-                    phase={phase}
-                />
+                {playlist && playlist.length > 0 && (
+                    <ExerciseDisplay 
+                        exercise={(phase === TimerPhase.WORK || phase === TimerPhase.PREPARE || phase === TimerPhase.FINISHED) ? currentExercise : nextExercise}
+                        phase={phase}
+                    />
+                )}
             </div>
 
             <footer className="w-full">
