@@ -466,8 +466,6 @@ const App: React.FC = () => {
                     onSave={handleSaveSettings}
                     onClose={() => setIsSettingsOpen(false)}
                     onOpenSounds={() => setIsSoundsOpen(true)}
-                    onOpenMusic={() => setIsMusicOpen(true)}
-                    onOpenPlans={() => setIsPlansOpen(true)}
                 />
             )}
             {isHistoryOpen && (

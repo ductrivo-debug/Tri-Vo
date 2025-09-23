@@ -7,9 +7,6 @@ interface SettingsModalProps {
     onSave: (newSettings: WorkoutSettings) => void;
     onClose: () => void;
     onOpenSounds: () => void;
-    // FIX: Add missing props for opening music and plans modals.
-    onOpenMusic: () => void;
-    onOpenPlans: () => void;
 }
 
 // A reusable component for minute and second dropdowns
@@ -63,7 +60,7 @@ const TimeInput: React.FC<{
 };
 
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, onClose, onOpenSounds, onOpenMusic, onOpenPlans }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, onClose, onOpenSounds }) => {
     const [settings, setSettings] = useState<WorkoutSettings>(currentSettings);
     const { t } = useLanguage();
 
@@ -74,17 +71,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
     const handleOpenSounds = () => {
         onClose();
         onOpenSounds();
-    };
-
-    // FIX: Add handlers to close the current modal and open the target modal.
-    const handleOpenMusic = () => {
-        onClose();
-        onOpenMusic();
-    };
-
-    const handleOpenPlans = () => {
-        onClose();
-        onOpenPlans();
     };
 
     const roundOptions = Array.from({ length: 100 }, (_, i) => i + 1);
@@ -137,9 +123,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
 
                 <div className="mt-6 pt-4 border-t border-slate-700 space-y-2">
                     <button onClick={handleOpenSounds} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('sounds')}</button>
-                    {/* FIX: Add buttons to open Music and Plans modals. */}
-                    <button onClick={handleOpenMusic} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('music')}</button>
-                    <button onClick={handleOpenPlans} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 rounded-md font-semibold transition-colors">{t('plans')}</button>
                 </div>
 
 
