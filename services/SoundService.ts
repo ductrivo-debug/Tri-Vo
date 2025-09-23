@@ -14,6 +14,34 @@ class SoundPlayer {
             }
         }
     }
+    
+    private async playCustomSound(dataUrl: string, volume: number) {
+        if (!this.audioContext) return;
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
+        try {
+            const response = await fetch(dataUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+            const source = this.audioContext.createBufferSource();
+            const gainNode = this.audioContext.createGain();
+
+            source.buffer = audioBuffer;
+            source.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            const maxGain = 0.8;
+            gainNode.gain.setValueAtTime(volume * maxGain, this.audioContext.currentTime);
+
+            source.start(0);
+        } catch(e) {
+            console.error("Error playing custom sound:", e);
+        }
+    }
+
 
     private playTone(frequency: number, duration: number, volume: number, type: OscillatorType = 'sine') {
         if (!this.audioContext || this.audioContext.state === 'suspended') {
@@ -40,6 +68,13 @@ class SoundPlayer {
     public playSound(setting: SoundSetting) {
         if (!this.isInitialized) this.init();
         if (!this.audioContext) return;
+        
+        if (setting.type === SoundType.CUSTOM) {
+            if (setting.customSound) {
+                this.playCustomSound(setting.customSound, setting.volume);
+            }
+            return;
+        }
         
         switch (setting.type) {
             case SoundType.BELL:

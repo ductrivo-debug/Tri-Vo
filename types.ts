@@ -42,12 +42,15 @@ export enum SoundType {
     ALARM = 'Báo động',
     BUZZER = 'Còi rè',
     WHISTLE = 'Còi a-go-go',
-    AIR_HORN = 'Kèn hơi'
+    AIR_HORN = 'Kèn hơi',
+    CUSTOM = 'Tùy chỉnh'
 }
 
 export interface SoundSetting {
     type: SoundType;
     volume: number; // 0 to 1
+    customSound?: string; // Base64 Data URL
+    customSoundName?: string; // Original file name for display
 }
 
 export interface SoundSettings {

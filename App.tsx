@@ -23,6 +23,7 @@ const App: React.FC = () => {
     }));
     const [customExercises, setCustomExercises] = useState<Exercise[]>(() => getInitialSettings('silverbackMmaCustomExercises', []));
     const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>(() => getInitialSettings('silverbackMmaHistory', []));
+    const [areAlertsMuted, setAreAlertsMuted] = useState<boolean>(false);
 
     // Music State
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -90,6 +91,7 @@ const App: React.FC = () => {
 
     // --- Sound Logic ---
     const playSoundWithDucking = (soundSetting: SoundSettings[keyof SoundSettings]) => {
+        if (areAlertsMuted) return;
         if (isMusicPlaying) musicServiceRef.current.duckVolume();
         SoundService.playSound(soundSetting);
         if (isMusicPlaying) setTimeout(() => musicServiceRef.current.restoreVolume(), 1200);
@@ -168,7 +170,7 @@ const App: React.FC = () => {
             }
         }
         return () => { if (interval) clearInterval(interval); };
-    }, [isActive, timeLeft, phase, currentRound, settings, soundSettings, selectNewExercise, workoutStartTime, isMusicPlaying]);
+    }, [isActive, timeLeft, phase, currentRound, settings, soundSettings, selectNewExercise, workoutStartTime, isMusicPlaying, areAlertsMuted]);
 
     useEffect(() => {
       selectNewExercise();
@@ -243,7 +245,7 @@ const App: React.FC = () => {
     
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-slate-900 font-sans">
-            <div className="w-full max-w-md mx-auto flex flex-col items-center justify-between h-full">
+            <div className="w-full max-w-md mx-auto flex flex-col items-center">
                 <header className="w-full text-center mb-8">
                     <h1 className="text-5xl font-black tracking-tighter uppercase">
                         <span className="bg-gradient-to-r from-slate-300 to-white text-transparent bg-clip-text">Silverback</span>
@@ -251,7 +253,7 @@ const App: React.FC = () => {
                     </h1>
                     <p className="text-slate-400 font-medium tracking-wider mt-1">WORKOUT TIMER</p>
                 </header>
-                <main className="flex-grow flex flex-col items-center justify-center w-full">
+                <main className="flex flex-col items-center justify-center w-full">
                     <TimerDisplay phase={phase} timeLeft={timeLeft} totalTime={getTotalTime()} currentRound={currentRound} totalRounds={settings.rounds} />
                      {(phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST || phase === TimerPhase.PREPARE) && <ExerciseDisplay exercise={currentExercise} phase={phase}/>}
                 </main>
@@ -259,10 +261,12 @@ const App: React.FC = () => {
                     <Controls
                         isActive={isActive}
                         phase={phase}
+                        areAlertsMuted={areAlertsMuted}
                         onStartPause={handleStartPause}
                         onReset={resetTimer}
                         onSettings={() => setIsSettingsOpen(true)}
                         onSoundSettings={() => setIsSoundSettingsOpen(true)}
+                        onToggleMute={() => setAreAlertsMuted(prev => !prev)}
                         onPlaylist={() => setIsWorkoutModalOpen(true)}
                         onHistory={() => setIsHistoryOpen(true)}
                         onMusic={openMusicModal}

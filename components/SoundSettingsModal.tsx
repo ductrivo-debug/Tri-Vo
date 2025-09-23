@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SoundSettings, SoundType, SoundSetting } from '../types';
 import SoundService from '../services/SoundService';
 
@@ -14,9 +14,37 @@ const SoundOptionControl: React.FC<{
     onChange: (newSetting: SoundSetting) => void;
 }> = ({ label, setting, onChange }) => {
     
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const handleTest = () => {
         SoundService.playSound(setting);
     }
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target?.result as string;
+                onChange({ 
+                    ...setting, 
+                    type: SoundType.CUSTOM, 
+                    customSound: dataUrl,
+                    customSoundName: file.name 
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newType = e.target.value as SoundType;
+        if (newType === SoundType.CUSTOM) {
+             fileInputRef.current?.click();
+        } else {
+             onChange({ ...setting, type: newType, customSound: undefined, customSoundName: undefined });
+        }
+    };
 
     return (
         <div>
@@ -24,15 +52,22 @@ const SoundOptionControl: React.FC<{
             <div className="flex items-center space-x-4">
                 <select
                     value={setting.type}
-                    onChange={(e) => onChange({ ...setting, type: e.target.value as SoundType })}
+                    onChange={handleTypeChange}
                     className="flex-1 bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                     {Object.values(SoundType).map(type => (
                         <option key={type} value={type}>{type}</option>
                     ))}
                 </select>
+                <input type="file" accept="audio/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                 <button onClick={handleTest} className="px-3 py-2 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold text-sm">Thử</button>
             </div>
+            {setting.type === SoundType.CUSTOM && setting.customSoundName && (
+                <div className="mt-2 text-xs text-slate-400">
+                    Âm thanh hiện tại: <span className="font-medium text-slate-200 truncate">{setting.customSoundName}</span>
+                     <button onClick={() => fileInputRef.current?.click()} className="ml-2 text-blue-400 hover:text-blue-300 text-xs">[Thay đổi]</button>
+                </div>
+            )}
             <div className="mt-2 flex items-center space-x-2">
                  <span className="text-xs text-slate-400">Âm lượng</span>
                  <input
