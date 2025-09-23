@@ -1,553 +1,386 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import TimerDisplay from './components/TimerDisplay';
 import Controls from './components/Controls';
-import SettingsModal from './components/SettingsModal';
-import HistoryModal from './components/HistoryModal';
 import ExerciseDisplay from './components/ExerciseDisplay';
+import SettingsModal from './components/SettingsModal';
 import SoundSettingsModal from './components/SoundSettingsModal';
+import HistoryModal from './components/HistoryModal';
 import ExercisePlaylistModal from './components/ExercisePlaylistModal';
-import MusicModal from './components/MusicModal';
 import WorkoutPlansModal from './components/WorkoutPlansModal';
+import MusicModal from './components/MusicModal';
+import { useLanguage } from './contexts/LanguageContext';
+import { EXERCISES as defaultExercises } from './constants';
 import SoundService from './services/SoundService';
 import MusicService from './services/MusicService';
-import { useLanguage } from './contexts/LanguageContext';
-import { 
-    WorkoutSettings, 
-    TimerPhase, 
-    WorkoutSession, 
-    SoundSettings, 
-    SoundType, 
+import {
+    WorkoutSettings,
+    TimerPhase,
     Exercise,
+    WorkoutSession,
+    SoundSettings,
+    SoundType,
     Track,
-    WorkoutPlan
+    WorkoutPlan,
 } from './types';
+import { translations } from './translations';
 
-// Default values
-const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
-    rounds: 10,
-    workTime: 180,
-    restTime: 60,
-    longRestTime: 120,
-    longRestFrequency: 5,
-};
-
-const DEFAULT_SOUND_SETTINGS: SoundSettings = {
-    start: { type: SoundType.BELL, volume: 0.8 },
-    end: { type: SoundType.BEEP, volume: 0.8 },
-    warning: { type: SoundType.BEEP, volume: 0.5 },
-};
-
-const PREPARE_TIME = 10;
-const WARNING_TIME = 10;
-
-
-// Custom hook for local storage
-function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-    const [storedValue, setStoredValue] = useState<T>(() => {
-        if (typeof window === 'undefined') {
-            return initialValue;
-        }
+// Custom hook for managing state with localStorage
+const usePersistentState = <T,>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const [state, setState] = useState<T>(() => {
         try {
-            const item = window.localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
+            const storedValue = localStorage.getItem(key);
+            return storedValue ? JSON.parse(storedValue) : defaultValue;
         } catch (error) {
-            console.error(error);
-            return initialValue;
+            console.error(`Error reading from localStorage key "${key}":`, error);
+            return defaultValue;
         }
     });
 
-    const setValue: React.Dispatch<React.SetStateAction<T>> = (value) => {
+    useEffect(() => {
         try {
-            const valueToStore = value instanceof Function ? value(storedValue) : value;
-            setStoredValue(valueToStore);
-            if (typeof window !== 'undefined') {
-                window.localStorage.setItem(key, JSON.stringify(valueToStore));
-            }
+            localStorage.setItem(key, JSON.stringify(state));
         } catch (error) {
-            console.error(error);
+            console.error(`Error writing to localStorage key "${key}":`, error);
         }
-    };
+    }, [key, state]);
 
-    return [storedValue, setValue];
-}
-
-const mapLocaleToSpeechLang = (loc: string): string => {
-    switch(loc) {
-        case 'en': return 'en-US';
-        case 'vi': return 'vi-VN';
-        case 'es': return 'es-ES';
-        case 'ru': return 'ru-RU';
-        case 'zh': return 'zh-CN';
-        default: return 'en-US';
-    }
+    return [state, setState];
 };
 
 
 const App: React.FC = () => {
     const { t, locale, setLocale } = useLanguage();
     
-    // State
-    const [settings, setSettings] = useLocalStorage<WorkoutSettings>('workoutSettings', DEFAULT_WORKOUT_SETTINGS);
-    const [soundSettings, setSoundSettings] = useLocalStorage<SoundSettings>('soundSettings', DEFAULT_SOUND_SETTINGS);
-    const [history, setHistory] = useLocalStorage<WorkoutSession[]>('workoutHistory', []);
-    const [allExercises, setAllExercises] = useLocalStorage<Exercise[]>('allExercises', []);
-    const [exercisePlaylist, setExercisePlaylist] = useLocalStorage<Exercise[]>('exercisePlaylist', []);
-    const [workoutPlans, setWorkoutPlans] = useLocalStorage<WorkoutPlan[]>('workoutPlans', []);
-    const [musicPlaylist, setMusicPlaylist] = useLocalStorage<Track[]>('musicPlaylist', []);
-    const [musicVolume, setMusicVolume] = useLocalStorage<number>('musicVolume', 0.5);
-    const [musicPlayMode, setMusicPlayMode] = useLocalStorage<'SEQUENTIAL' | 'SHUFFLE'>('musicPlayMode', 'SEQUENTIAL');
-
-    const [phase, setPhase] = useState<TimerPhase>(TimerPhase.PREPARE);
-    const [timeLeft, setTimeLeft] = useState(PREPARE_TIME);
-    const [totalTime, setTotalTime] = useState(PREPARE_TIME);
+    // ======== STATE MANAGEMENT ========
+    const [settings, setSettings] = usePersistentState<WorkoutSettings>('workoutSettings', {
+        rounds: 12,
+        workTime: 180,
+        restTime: 60,
+        longRestTime: 120,
+        longRestFrequency: 4,
+    });
     
-    // Overall workout state
-    const [isWorkoutActive, setIsWorkoutActive] = useState(false); // replaces isActive
-    const [currentOverallRound, setCurrentOverallRound] = useState(1);
-    const [totalWorkoutRounds, setTotalWorkoutRounds] = useState(settings.rounds);
+    const [soundSettings, setSoundSettings] = usePersistentState<SoundSettings>('soundSettings', {
+        start: { type: SoundType.BELL, volume: 0.5 },
+        end: { type: SoundType.BELL, volume: 0.5 },
+        warning: { type: SoundType.BEEP, volume: 0.3 },
+    });
 
-    // Playlist specific state
-    const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
-    const [currentExerciseRound, setCurrentExerciseRound] = useState(1);
-
-
-    const [currentMusicTrack, setCurrentMusicTrack] = useState<Track | null>(null);
-    const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-
-    // Modals visibility
+    const [allExercises, setAllExercises] = usePersistentState<Exercise[]>('allExercises', defaultExercises);
+    const [playlist, setPlaylist] = usePersistentState<Exercise[]>('playlist', defaultExercises.slice(0, 5));
+    const [history, setHistory] = usePersistentState<WorkoutSession[]>('workoutHistory', []);
+    const [plans, setPlans] = usePersistentState<WorkoutPlan[]>('workoutPlans', []);
+    
+    const [musicPlaylist, setMusicPlaylist] = usePersistentState<Track[]>('musicPlaylist', []);
+    const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+    const [musicIsPlaying, setMusicIsPlaying] = useState(false);
+    const [musicVolume, setMusicVolume] = useState(0.5);
+    const [playMode, setPlayMode] = useState<'SEQUENTIAL' | 'SHUFFLE'>('SEQUENTIAL');
+    
+    // Timer state
+    const [phase, setPhase] = useState<TimerPhase>(TimerPhase.PREPARE);
+    const [timeLeft, setTimeLeft] = useState(10);
+    const [currentRound, setCurrentRound] = useState(1);
+    const [isActive, setIsActive] = useState(false);
+    const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+    
+    // Modal visibility
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isSoundSettingsOpen, setIsSoundSettingsOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-    const [isSoundsOpen, setIsSoundsOpen] = useState(false);
     const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
-    const [isMusicOpen, setIsMusicOpen] = useState(false);
     const [isPlansOpen, setIsPlansOpen] = useState(false);
-
-    // Refs
-    // FIX: Use `number` for timer ID in browser environments instead of `NodeJS.Timeout`.
-    const timerRef = useRef<number | null>(null);
-    const sessionStartTimeRef = useRef<number | null>(null);
+    const [isMusicOpen, setIsMusicOpen] = useState(false);
+    
+    const intervalRef = useRef<number | null>(null);
     const musicServiceRef = useRef<MusicService | null>(null);
 
-    const handleGoToNextTrack = useCallback(() => {
-        if (!musicServiceRef.current || musicPlaylist.length === 0) return;
-    
-        const currentIdx = currentMusicTrack ? musicPlaylist.findIndex(t => t.id === currentMusicTrack.id) : -1;
-        let nextIdx = -1;
-    
-        if (musicPlayMode === 'SHUFFLE') {
-            if (musicPlaylist.length > 1) {
-                do {
-                    nextIdx = Math.floor(Math.random() * musicPlaylist.length);
-                } while (nextIdx === currentIdx);
-            } else {
-                nextIdx = 0;
-            }
-        } else { // SEQUENTIAL
-            nextIdx = (currentIdx + 1) % musicPlaylist.length;
-        }
-    
-        if (nextIdx !== -1) {
-            const nextTrack = musicPlaylist[nextIdx];
-            setCurrentMusicTrack(nextTrack);
-            musicServiceRef.current.play(nextTrack.file);
-        } else {
-            setIsMusicPlaying(false);
-            setCurrentMusicTrack(null);
-        }
-    }, [musicPlaylist, currentMusicTrack, musicPlayMode]);
+    const currentExercise = playlist[ (currentRound - 1) % playlist.length ] || null;
+    const nextExercise = playlist[ currentRound % playlist.length ] || null;
 
-    useEffect(() => {
-        musicServiceRef.current = new MusicService(handleGoToNextTrack);
-        musicServiceRef.current.init();
-    }, [handleGoToNextTrack]);
+    // ======== EFFECTS & LOGIC ========
 
+    // Data migration for exercises without duration
     useEffect(() => {
-        if (musicServiceRef.current) {
-            musicServiceRef.current.setVolume(musicVolume);
-        }
-    }, [musicVolume]);
-    
-    const isUsingPlaylist = exercisePlaylist.length > 0;
-    
-    // Data migration for old exercises without rounds/duration
-    useEffect(() => {
-        const needsMigration = allExercises.some(ex => ex.rounds === undefined || ex.duration === undefined);
-        if (needsMigration) {
-            const migrated = allExercises.map(ex => ({
+        const migrateExercises = (exercises: Exercise[]): Exercise[] => {
+            return exercises.map(ex => ({
                 ...ex,
-                rounds: ex.rounds || 1,
-                duration: ex.duration || 180,
+                duration: ex.duration || settings.workTime 
             }));
-            setAllExercises(migrated);
+        };
+
+        const needsMigration = (exercises: any[]): boolean => {
+            return exercises && exercises.some(ex => ex.duration === undefined || ex.imageUrl !== undefined);
         }
-    // This should run only once on startup
+
+        const currentAllExercises = JSON.parse(localStorage.getItem('allExercises') || 'null');
+        if (needsMigration(currentAllExercises)) {
+            console.log("Migrating allExercises to add duration and remove imageUrl...");
+            setAllExercises(migrateExercises(currentAllExercises));
+        }
+
+        const currentPlaylist = JSON.parse(localStorage.getItem('playlist') || 'null');
+        if (needsMigration(currentPlaylist)) {
+            console.log("Migrating playlist to add duration and remove imageUrl...");
+            setPlaylist(migrateExercises(currentPlaylist));
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-    
+
+
+    const handleNextTrack = useCallback(() => {
+        // Logic to play the next track based on playMode
+    }, []);
+
+    // Initialize Music Service
     useEffect(() => {
-        if (isUsingPlaylist) {
-            const totalRounds = exercisePlaylist.reduce((sum, ex) => sum + ex.rounds, 0);
-            setTotalWorkoutRounds(totalRounds);
-        } else {
-            setTotalWorkoutRounds(settings.rounds);
-        }
-    }, [exercisePlaylist, settings.rounds, isUsingPlaylist]);
+        musicServiceRef.current = new MusicService(() => handleNextTrack());
+        musicServiceRef.current.init();
+    }, [handleNextTrack]);
 
+    const resetTimer = useCallback(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setIsActive(false);
+        setPhase(TimerPhase.PREPARE);
+        setTimeLeft(10);
+        setCurrentRound(1);
+        setSessionStartTime(null);
+    }, []);
 
-    // Timer logic
+    const langCode = locale === 'vi' ? 'vi-VN' : locale === 'es' ? 'es-ES' : locale === 'ru' ? 'ru-RU' : locale === 'zh' ? 'zh-CN' : 'en-US';
+
+    // Timer countdown logic
     useEffect(() => {
-        if (isWorkoutActive) {
-            timerRef.current = window.setInterval(() => {
-                setTimeLeft(prev => prev - 1);
-            }, 1000);
-        } else {
-            if (timerRef.current) clearInterval(timerRef.current);
+        if (!isActive) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return;
         }
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [isWorkoutActive]);
-
-    const handleFinish = useCallback(() => {
-        setIsWorkoutActive(false);
-        setPhase(TimerPhase.FINISHED);
         
-        if (sessionStartTimeRef.current) {
-            const sessionDuration = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000);
-            const newSession: WorkoutSession = {
-                date: new Date().toISOString(),
-                duration: sessionDuration,
-                roundsCompleted: totalWorkoutRounds,
-                settings: settings,
-            };
-            setHistory(prev => [newSession, ...prev]);
-            sessionStartTimeRef.current = null;
-        }
-        if (isMusicPlaying) musicServiceRef.current?.restoreVolume();
-    }, [setHistory, settings, totalWorkoutRounds, isMusicPlaying]);
+        intervalRef.current = window.setInterval(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+        
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [isActive]);
 
     // Phase transition logic
     useEffect(() => {
-        if (isWorkoutActive) {
-            const speechLang = mapLocaleToSpeechLang(locale);
-            const shouldCountdown = 
-                (phase === TimerPhase.PREPARE && timeLeft <= PREPARE_TIME && timeLeft > 0) ||
-                ((phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST) && timeLeft <= WARNING_TIME && timeLeft > 0);
-
-            if (shouldCountdown) {
-                SoundService.speak(timeLeft.toString(), speechLang, soundSettings.warning.volume);
-            }
+        // Warning sounds and countdown
+        const isWarningPhase = phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST || phase === TimerPhase.PREPARE;
+        if (isWarningPhase && timeLeft <= 10 && timeLeft > 0) {
+            SoundService.speak(String(timeLeft), langCode, soundSettings.warning.volume);
         }
-        
-        if (timeLeft === WARNING_TIME && (phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST)) {
-            // The old beep warning is replaced by the countdown
-            if (isMusicPlaying) musicServiceRef.current?.duckVolume();
+        if (timeLeft === 10 && (phase === TimerPhase.WORK || phase === TimerPhase.PREPARE)) {
+            musicServiceRef.current?.duckVolume(); // Duck music volume before a sound
         }
-        if (timeLeft === 1 && (phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST)) {
-            if (isMusicPlaying) musicServiceRef.current?.restoreVolume();
-        }
-
 
         if (timeLeft > 0) return;
 
-        // Playlist logic
-        if (isUsingPlaylist) {
-            const currentExercise = exercisePlaylist[currentPlaylistIndex];
-            
-            switch (phase) {
-                case TimerPhase.PREPARE:
-                    setPhase(TimerPhase.WORK);
-                    setTimeLeft(currentExercise.duration);
-                    setTotalTime(currentExercise.duration);
-                    SoundService.playSound(soundSettings.start);
-                    break;
-                
-                case TimerPhase.WORK:
-                    SoundService.playSound(soundSettings.end);
-                    if (currentExerciseRound < currentExercise.rounds) {
-                        // Same exercise, next round
-                        setCurrentExerciseRound(r => r + 1);
-                        setCurrentOverallRound(r => r + 1);
-                        setPhase(TimerPhase.REST);
-                        setTimeLeft(settings.restTime);
-                        setTotalTime(settings.restTime);
-                    } else { // Finished all rounds for this exercise
-                         if (currentPlaylistIndex < exercisePlaylist.length - 1) {
-                            // Move to next exercise
-                            setCurrentPlaylistIndex(i => i + 1);
-                            setCurrentExerciseRound(1);
-                            setCurrentOverallRound(r => r + 1);
-                            setPhase(TimerPhase.REST);
-                            setTimeLeft(settings.restTime);
-                            setTotalTime(settings.restTime);
-                         } else {
-                             handleFinish();
-                         }
-                    }
-                    break;
+        musicServiceRef.current?.restoreVolume();
 
-                case TimerPhase.REST:
-                     setPhase(TimerPhase.WORK);
-                     setTimeLeft(currentExercise.duration);
-                     setTotalTime(currentExercise.duration);
-                     SoundService.playSound(soundSettings.start);
-                    break;
-                
-                default:
-                    // LONG_REST isn't used in playlist mode, FINISHED handled by handleFinish
-                    break;
-            }
-        } 
-        // Standard Timer Logic
-        else {
-            switch(phase) {
-                case TimerPhase.PREPARE:
-                    setPhase(TimerPhase.WORK);
-                    setTimeLeft(settings.workTime);
-                    setTotalTime(settings.workTime);
-                    SoundService.playSound(soundSettings.start);
-                    break;
-                case TimerPhase.WORK:
-                    SoundService.playSound(soundSettings.end);
-                    if (currentOverallRound % settings.longRestFrequency === 0 && currentOverallRound < settings.rounds) {
-                        setPhase(TimerPhase.LONG_REST);
-                        setTimeLeft(settings.longRestTime);
-                        setTotalTime(settings.longRestTime);
-                    } else if (currentOverallRound < settings.rounds) {
-                        setPhase(TimerPhase.REST);
-                        setTimeLeft(settings.restTime);
-                        setTotalTime(settings.restTime);
-                    } else {
-                        handleFinish();
+        switch (phase) {
+            case TimerPhase.PREPARE:
+                SoundService.playSound(soundSettings.start);
+                setPhase(TimerPhase.WORK);
+                setTimeLeft(currentExercise?.duration ?? settings.workTime);
+                break;
+            case TimerPhase.WORK:
+                SoundService.playSound(soundSettings.end);
+                if (currentRound >= settings.rounds) {
+                    setPhase(TimerPhase.FINISHED);
+                    setIsActive(false);
+                    // Save session to history
+                    if (sessionStartTime) {
+                        const newSession: WorkoutSession = {
+                            date: new Date().toISOString(),
+                            duration: Math.round((Date.now() - sessionStartTime) / 1000),
+                            roundsCompleted: currentRound,
+                            settings: settings,
+                        };
+                        setHistory(prev => [newSession, ...prev]);
                     }
-                    break;
-                case TimerPhase.REST:
-                case TimerPhase.LONG_REST:
-                    setCurrentOverallRound(prev => prev + 1);
-                    setPhase(TimerPhase.WORK);
-                    setTimeLeft(settings.workTime);
-                    setTotalTime(settings.workTime);
-                    SoundService.playSound(soundSettings.start);
-                    break;
-                default:
-                    break;
-            }
+                } else if (currentRound > 0 && settings.longRestFrequency > 0 && currentRound % settings.longRestFrequency === 0) {
+                    setPhase(TimerPhase.LONG_REST);
+                    setTimeLeft(settings.longRestTime);
+                } else {
+                    setPhase(TimerPhase.REST);
+                    setTimeLeft(settings.restTime);
+                }
+                break;
+            case TimerPhase.REST:
+            case TimerPhase.LONG_REST:
+                SoundService.playSound(soundSettings.start);
+                const nextRound = currentRound + 1;
+                setCurrentRound(nextRound);
+                const nextExerciseForWork = playlist[(nextRound - 1) % playlist.length];
+                setPhase(TimerPhase.WORK);
+                setTimeLeft(nextExerciseForWork?.duration ?? settings.workTime);
+                break;
+            case TimerPhase.FINISHED:
+                break;
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [timeLeft]);
+    }, [timeLeft, phase, isActive, currentRound, settings, soundSettings, sessionStartTime, setHistory, playlist]);
 
-    // Handlers
+    // ======== HANDLERS ========
     const handleStart = () => {
-        if(phase === TimerPhase.FINISHED) {
-            handleReset();
-        }
-        setIsWorkoutActive(true);
-        if(sessionStartTimeRef.current === null) {
-            sessionStartTimeRef.current = Date.now();
+        if (phase === TimerPhase.FINISHED) resetTimer();
+        setIsActive(true);
+        if (!sessionStartTime) {
+            setSessionStartTime(Date.now());
         }
     };
-    const handlePause = () => setIsWorkoutActive(false);
-    const handleReset = () => {
-        setIsWorkoutActive(false);
-        setPhase(TimerPhase.PREPARE);
-        setCurrentOverallRound(1);
-        setCurrentPlaylistIndex(0);
-        setCurrentExerciseRound(1);
-        setTimeLeft(PREPARE_TIME);
-        setTotalTime(PREPARE_TIME);
-        sessionStartTimeRef.current = null;
-        if (isMusicPlaying) musicServiceRef.current?.restoreVolume();
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-    };
-
-
-    const handleSaveSettings = (newSettings: WorkoutSettings) => {
-        setSettings(newSettings);
-        setIsSettingsOpen(false);
-        handleReset();
-    };
-
-    const handleSaveSoundSettings = (newSettings: SoundSettings) => {
-        setSoundSettings(newSettings);
-        setIsSoundsOpen(false);
-    }
     
-    const getDisplayedExercise = () => {
-        if (!isUsingPlaylist) return null;
-
-        const currentIndex = currentPlaylistIndex;
-        const nextIndex = (currentPlaylistIndex + 1) % exercisePlaylist.length;
-
-        if (phase === TimerPhase.PREPARE || phase === TimerPhase.WORK) {
-            return exercisePlaylist[currentIndex];
+    const handleAddOrUpdateExercise = (exerciseData: Omit<Exercise, 'id'> | Exercise) => {
+        if ('id' in exerciseData) {
+            // Editing existing exercise
+            setAllExercises(prev => prev.map(ex => ex.id === exerciseData.id ? exerciseData : ex));
+            setPlaylist(prev => prev.map(ex => ex.id === exerciseData.id ? exerciseData : ex));
+        } else {
+            // Adding new exercise
+            const newExercise: Exercise = {
+                id: new Date().toISOString() + Math.random(),
+                ...exerciseData
+            };
+            setAllExercises(prev => [...prev, newExercise]);
         }
-        if (phase === TimerPhase.REST || phase === TimerPhase.LONG_REST) {
-            // If it's the last round of the last exercise, don't show "next"
-            const currentEx = exercisePlaylist[currentIndex];
-            if (currentIndex === exercisePlaylist.length - 1 && currentExerciseRound >= currentEx.rounds) {
-                return null;
-            }
-            return exercisePlaylist[nextIndex];
-        }
-        return null;
-    }
+    };
     
     const handleLoadPlan = (plan: WorkoutPlan) => {
         const planExercises = allExercises.filter(ex => plan.exerciseIds.includes(ex.id));
-        setExercisePlaylist(planExercises);
+        setPlaylist(planExercises);
         setIsPlansOpen(false);
-        handleReset();
-    }
+    };
 
-    const handlePlayPauseMusic = () => {
-        if (isMusicPlaying) {
-            musicServiceRef.current?.pause();
-            setIsMusicPlaying(false);
-        } else {
-            if (musicPlaylist.length > 0) {
-                const trackToPlay = currentMusicTrack || musicPlaylist[0];
-                 if (trackToPlay) {
-                    setCurrentMusicTrack(trackToPlay);
-                    musicServiceRef.current?.play(trackToPlay.file);
-                    setIsMusicPlaying(true);
-                }
-            }
+    const totalTime = (() => {
+        switch(phase){
+            case TimerPhase.PREPARE: return 10;
+            case TimerPhase.WORK: return currentExercise?.duration ?? settings.workTime;
+            case TimerPhase.REST: return settings.restTime;
+            case TimerPhase.LONG_REST: return settings.longRestTime;
+            default: return 0;
         }
-    };
-    
-    const handleNextTrack = () => {
-        handleGoToNextTrack();
-        if(!isMusicPlaying) setIsMusicPlaying(true);
-    };
+    })();
 
-    const handlePrevTrack = () => {
-        if (!musicServiceRef.current || musicPlaylist.length === 0) return;
-        const currentIdx = currentMusicTrack ? musicPlaylist.findIndex(t => t.id === currentMusicTrack.id) : -1;
-        const prevIdx = (currentIdx - 1 + musicPlaylist.length) % musicPlaylist.length;
-        const prevTrack = musicPlaylist[prevIdx];
-        setCurrentMusicTrack(prevTrack);
-        musicServiceRef.current.play(prevTrack.file);
-        if(!isMusicPlaying) setIsMusicPlaying(true);
-    };
-    
-    const languages: { code: string, name: string }[] = [
-        { code: 'en', name: 'English' },
-        { code: 'vi', name: 'Tiếng Việt' },
-        { code: 'es', name: 'Español' },
-        { code: 'ru', name: 'Русский' },
-        { code: 'zh', name: '中文' },
-    ];
-
-
+    // ======== RENDER ========
     return (
-        <div className="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-between p-4 font-sans">
-             <header className="w-full flex items-center justify-center">
-                <div>
-                    <h1 className="text-6xl font-extrabold text-white tracking-tighter text-center">SILVERBACK</h1>
-                    <h2 className="text-6xl font-extrabold text-red-500 tracking-tighter text-center -mt-4">MMA</h2>
-                    <p className="text-slate-400 text-sm tracking-widest mt-1 text-center">{t('workoutTimer')}</p>
-                </div>
+        <main className="bg-slate-900 min-h-screen text-white flex flex-col items-center justify-between p-4 font-sans">
+            <header className="w-full flex flex-col items-center text-center">
+                <h1 className="text-6xl font-extrabold leading-none tracking-tighter">
+                    <span className="text-white block">SILVERBACK</span>
+                    <span className="text-red-500 block -mt-2">MMA</span>
+                </h1>
+                <select
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value as keyof typeof translations)}
+                    className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-xs text-slate-300 mt-2 focus:ring-1 focus:ring-blue-500"
+                    aria-label="Select language"
+                >
+                    <option value="en">English</option>
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="es">Español</option>
+                    <option value="ru">Русский</option>
+                    <option value="zh">中文</option>
+                </select>
             </header>
-
-            <main className="flex flex-col items-center flex-grow justify-center w-full">
-                <TimerDisplay
+            
+            <div className="w-full flex flex-col items-center">
+                 <TimerDisplay 
                     phase={phase}
                     timeLeft={timeLeft}
                     totalTime={totalTime}
-                    currentRound={currentOverallRound}
-                    totalRounds={totalWorkoutRounds}
+                    currentRound={currentRound}
+                    totalRounds={settings.rounds}
                 />
-                
-                <ExerciseDisplay exercise={getDisplayedExercise()} phase={phase} />
+                <ExerciseDisplay 
+                    exercise={(phase === TimerPhase.WORK || phase === TimerPhase.PREPARE || phase === TimerPhase.FINISHED) ? currentExercise : nextExercise}
+                    phase={phase}
+                />
+            </div>
 
+            <footer className="w-full">
                 <Controls
-                    isActive={isWorkoutActive}
+                    isActive={isActive}
                     onStart={handleStart}
-                    onPause={handlePause}
-                    onReset={handleReset}
+                    onPause={() => setIsActive(false)}
+                    onReset={resetTimer}
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     onOpenHistory={() => setIsHistoryOpen(true)}
                     onOpenPlaylist={() => setIsPlaylistOpen(true)}
                     onOpenPlans={() => setIsPlansOpen(true)}
                     onOpenMusic={() => setIsMusicOpen(true)}
                 />
-            </main>
-            
-            <footer className="w-full flex justify-end mt-4">
-                 <select 
-                    onChange={(e) => setLocale(e.target.value as 'en' | 'vi' | 'es' | 'ru' | 'zh')} 
-                    value={locale}
-                    className="bg-slate-800 text-white text-xs rounded p-1 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Select language"
-                >
-                    {languages.map(lang => (
-                        <option key={lang.code} value={lang.code}>{lang.name}</option>                    ))}
-                </select>
             </footer>
 
-
+            {/* Modals */}
             {isSettingsOpen && (
                 <SettingsModal
                     currentSettings={settings}
-                    onSave={handleSaveSettings}
+                    onSave={(newSettings) => {
+                        setSettings(newSettings);
+                        setIsSettingsOpen(false);
+                        resetTimer();
+                    }}
                     onClose={() => setIsSettingsOpen(false)}
-                    onOpenSounds={() => setIsSoundsOpen(true)}
+                    onOpenSounds={() => setIsSoundSettingsOpen(true)}
                 />
             )}
-            {isHistoryOpen && (
+             {isSoundSettingsOpen && (
+                <SoundSettingsModal
+                    currentSettings={soundSettings}
+                    onSave={(newSettings) => {
+                        setSoundSettings(newSettings);
+                        setIsSoundSettingsOpen(false);
+                    }}
+                    onClose={() => setIsSoundSettingsOpen(false)}
+                />
+            )}
+             {isHistoryOpen && (
                 <HistoryModal
                     history={history}
                     onClose={() => setIsHistoryOpen(false)}
                     onClear={() => setHistory([])}
                 />
             )}
-            {isSoundsOpen && (
-                 <SoundSettingsModal
-                    currentSettings={soundSettings}
-                    onSave={handleSaveSoundSettings}
-                    onClose={() => setIsSoundsOpen(false)}
-                />
-            )}
             {isPlaylistOpen && (
                 <ExercisePlaylistModal
+                    playlist={playlist}
                     allExercises={allExercises}
-                    // FIX: Pass the full exercise objects for the current playlist.
-                    currentUserPlaylist={exercisePlaylist}
-                    onSave={(newPlaylist, newAllExercises) => {
-                        setExercisePlaylist(newPlaylist);
-                        setAllExercises(newAllExercises)
-                        setIsPlaylistOpen(false);
-                    }}
                     onClose={() => setIsPlaylistOpen(false)}
+                    onUpdatePlaylist={setPlaylist}
+                    onAddOrUpdateExercise={handleAddOrUpdateExercise}
+                    onDeleteExercise={(id) => setAllExercises(allExercises.filter(ex => ex.id !== id))}
                 />
             )}
             {isPlansOpen && (
                 <WorkoutPlansModal
-                    plans={workoutPlans}
+                    plans={plans}
                     allExercises={allExercises}
                     onClose={() => setIsPlansOpen(false)}
                     onLoadPlan={handleLoadPlan}
-                    onSavePlans={setWorkoutPlans}
+                    onSavePlans={setPlans}
                 />
             )}
             {isMusicOpen && (
                 <MusicModal
                     playlist={musicPlaylist}
-                    currentTrack={currentMusicTrack}
-                    isPlaying={isMusicPlaying}
+                    currentTrack={currentTrack}
+                    isPlaying={musicIsPlaying}
                     volume={musicVolume}
-                    playMode={musicPlayMode}
-                    onAddTracks={(tracks) => setMusicPlaylist(tracks)}
-                    onRemoveTrack={(id) => setMusicPlaylist(prev => prev.filter(t => t.id !== id))}
-                    onPlayPause={handlePlayPauseMusic}
-                    onNext={handleNextTrack}
-                    onPrev={handlePrevTrack}
+                    playMode={playMode}
+                    onAddTracks={(tracks) => setMusicPlaylist(p => [...p, ...tracks])}
+                    onRemoveTrack={(trackId) => setMusicPlaylist(p => p.filter(t => t.id !== trackId))}
+                    onPlayPause={() => {}} // Placeholder
+                    onNext={() => {}} // Placeholder
+                    onPrev={() => {}} // Placeholder
                     onVolumeChange={setMusicVolume}
-                    onPlayModeChange={setMusicPlayMode}
+                    onPlayModeChange={setPlayMode}
                     onClose={() => setIsMusicOpen(false)}
                 />
             )}
-        </div>
+        </main>
     );
 };
 

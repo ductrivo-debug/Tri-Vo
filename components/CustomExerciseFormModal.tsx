@@ -8,7 +8,6 @@ interface CustomExerciseFormModalProps {
     onClose: () => void;
 }
 
-// Reusable TimeInput component, scoped to this modal
 const TimeInput: React.FC<{
     label: string;
     totalSeconds: number;
@@ -58,126 +57,94 @@ const TimeInput: React.FC<{
     );
 };
 
+
 const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerciseToEdit, onSave, onClose }) => {
     const { t } = useLanguage();
-    const [exercise, setExercise] = useState({
-        name: '',
-        description: '',
-        category: ExerciseCategory.ENDURANCE,
-        imageUrl: '',
-        rounds: 1,
-        duration: 180, // Default to 3 minutes
-    });
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState<ExerciseCategory>(ExerciseCategory.CUSTOM);
+    const [duration, setDuration] = useState(180); // Default 3 minutes
 
     useEffect(() => {
         if (exerciseToEdit) {
-            setExercise({
-                name: exerciseToEdit.name,
-                description: exerciseToEdit.description,
-                category: exerciseToEdit.category,
-                imageUrl: exerciseToEdit.imageUrl || '',
-                rounds: exerciseToEdit.rounds,
-                duration: exerciseToEdit.duration,
-            });
+            setName(exerciseToEdit.name);
+            setDescription(exerciseToEdit.description);
+            setCategory(exerciseToEdit.category);
+            setDuration(exerciseToEdit.duration);
         }
     }, [exerciseToEdit]);
 
     const handleSave = () => {
-        if (!exercise.name.trim()) {
+        if (!name.trim()) {
             alert(t('enterExerciseName'));
             return;
         }
+
+        const exerciseData = {
+            name,
+            description,
+            category,
+            duration,
+        };
+
         if (exerciseToEdit) {
-             onSave({ ...exerciseToEdit, ...exercise });
+            onSave({ ...exerciseToEdit, ...exerciseData });
         } else {
-             onSave(exercise);
+            onSave(exerciseData);
         }
         onClose();
     };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setExercise(prev => ({ ...prev, [name]: value }));
-    };
-
+    
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-sm text-white shadow-2xl animate-fade-in flex flex-col" style={{maxHeight: '95vh'}}>
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md text-white shadow-2xl">
                 <h2 className="text-2xl font-bold mb-6 text-center">{exerciseToEdit ? t('editExercise') : t('createNewExercise')}</h2>
-                <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                
+                <div className="space-y-4">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">{t('exerciseName')}</label>
+                        <label htmlFor="exerciseName" className="block text-sm font-medium text-slate-300 mb-1">{t('exerciseName')}</label>
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            value={exercise.name}
-                            onChange={handleChange}
+                            id="exerciseName"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                             required
                         />
                     </div>
-                     <div>
-                        <label htmlFor="rounds" className="block text-sm font-medium text-slate-300 mb-1">{t('exerciseRounds')}</label>
-                        <input
-                            type="number"
-                            id="rounds"
-                            name="rounds"
-                            value={exercise.rounds}
-                            onChange={(e) => setExercise(prev => ({...prev, rounds: parseInt(e.target.value, 10) || 1}))}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
-                            min="1"
-                        />
-                    </div>
                      <TimeInput 
                         label={t('exerciseDuration')}
-                        totalSeconds={exercise.duration}
-                        onChange={(newTotal) => setExercise(prev => ({...prev, duration: newTotal}))}
+                        totalSeconds={duration}
+                        onChange={setDuration}
                      />
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">{t('description')}</label>
+                     <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">{t('descriptionLabel')}</label>
                         <textarea
                             id="description"
-                            name="description"
-                            value={exercise.description}
-                            onChange={handleChange}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                             rows={3}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-                    <div>
+                     <div>
                         <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">{t('category')}</label>
                         <select
                             id="category"
-                            name="category"
-                            value={exercise.category}
-                            onChange={handleChange}
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value as ExerciseCategory)}
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value={ExerciseCategory.BOXING}>{t('BOXING')}</option>
-                            <option value={ExerciseCategory.ENDURANCE}>{t('ENDURANCE')}</option>
+                            {Object.values(ExerciseCategory).map(cat => (
+                                <option key={cat} value={cat}>{t(cat)}</option>
+                            ))}
                         </select>
                     </div>
-                    <div>
-                        <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-300 mb-1">{t('imageUrl')}</label>
-                        <input
-                            type="text"
-                            id="imageUrl"
-                            name="imageUrl"
-                            value={exercise.imageUrl}
-                            onChange={handleChange}
-                            placeholder="https://..."
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
                 </div>
-                <div className="mt-8 flex space-x-4 pt-4 border-t border-slate-700">
-                    <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">
-                        {t('cancel')}
-                    </button>
-                    <button onClick={handleSave} className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors">
-                        {t('save')}
-                    </button>
+                
+                <div className="mt-8 flex space-x-4">
+                    <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">{t('cancel')}</button>
+                    <button onClick={handleSave} className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors">{t('save')}</button>
                 </div>
             </div>
         </div>

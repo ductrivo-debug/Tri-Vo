@@ -10,34 +10,36 @@ interface ExerciseDisplayProps {
 const ExerciseDisplay: React.FC<ExerciseDisplayProps> = ({ exercise, phase }) => {
     const { t } = useLanguage();
     if (!exercise) {
-        return null;
+        return <div className="mt-6 w-full max-w-sm h-40"></div>; // Placeholder to prevent layout shift
     }
 
     const getTitleText = () => {
         switch (phase) {
             case TimerPhase.PREPARE:
-                return t('firstExercise');
+                 return t('firstExercise');
+            case TimerPhase.FINISHED:
+                return t('lastExercise');
             case TimerPhase.WORK:
                 return t('currentExercise');
             case TimerPhase.REST:
             case TimerPhase.LONG_REST:
                 return t('nextExercise');
             default:
-                return ""; // Should not happen
+                return "";
         }
     };
     const titleText = getTitleText();
 
     return (
-        <div className="mt-6 w-full max-w-sm bg-slate-800 rounded-lg overflow-hidden animate-fade-in shadow-lg border border-slate-700">
-            {exercise.imageUrl && (
-                <img src={exercise.imageUrl} alt={exercise.name} className="w-full h-40 object-cover" />
-            )}
+        <div className="mt-6 w-full bg-slate-800 rounded-lg overflow-hidden animate-fade-in shadow-lg border border-slate-700">
             <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-sm text-slate-400 uppercase tracking-wider">{titleText}</p>
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        exercise.category === 'BOXING' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+                        exercise.category === 'BOXING' ? 'bg-red-500 text-white' : 
+                        exercise.category === 'KICKBOXING' ? 'bg-blue-500 text-white' : 
+                        exercise.category === 'MMA' ? 'bg-purple-500 text-white' : 
+                        'bg-gray-500 text-white'
                     }`}>
                         {t(exercise.category)}
                     </span>

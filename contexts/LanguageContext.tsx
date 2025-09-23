@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { translations } from '../translations';
 
@@ -39,6 +37,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const t = useCallback((key: keyof Translations | string, ...args: any[]): string => {
         const translationKey = key as keyof Translations;
+        // @ts-ignore
         let translation = translations[locale]?.[translationKey] || translations['en']?.[translationKey] || key;
         
         if (typeof translation !== 'string') {
