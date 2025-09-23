@@ -7,22 +7,61 @@ interface SettingsModalProps {
     onClose: () => void;
 }
 
+// A reusable component for minute and second dropdowns
+const TimeInput: React.FC<{
+    label: string;
+    totalSeconds: number;
+    onChange: (newTotalSeconds: number) => void;
+}> = ({ label, totalSeconds, onChange }) => {
+    const currentMinutes = Math.floor(totalSeconds / 60);
+    const currentSeconds = totalSeconds % 60;
+
+    const handleMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newMinutes = parseInt(e.target.value, 10);
+        onChange(newMinutes * 60 + currentSeconds);
+    };
+
+    const handleSecondChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newSeconds = parseInt(e.target.value, 10);
+        onChange(currentMinutes * 60 + newSeconds);
+    };
+
+    const minuteOptions = Array.from({ length: 60 }, (_, i) => i);
+    const secondOptions = Array.from({ length: 60 }, (_, i) => i);
+
+    return (
+        <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+            <div className="flex space-x-2">
+                <select
+                    value={currentMinutes}
+                    onChange={handleMinuteChange}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    {minuteOptions.map(min => (
+                        <option key={min} value={min}>{min.toString().padStart(2, '0')} phút</option>
+                    ))}
+                </select>
+                <select
+                    value={currentSeconds}
+                    onChange={handleSecondChange}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    {secondOptions.map(sec => (
+                        <option key={sec} value={sec}>{sec.toString().padStart(2, '0')} giây</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+    );
+};
+
+
 const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, onClose }) => {
     const [settings, setSettings] = useState<WorkoutSettings>(currentSettings);
 
     const handleSave = () => {
         onSave(settings);
-    };
-
-    const formatTimeFromSeconds = (totalSeconds: number) => {
-        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-        return `${minutes}:${seconds}`;
-    };
-    
-    const parseTimeToSeconds = (time: string) => {
-        const [minutes, seconds] = time.split(':').map(Number);
-        return (minutes || 0) * 60 + (seconds || 0);
     };
 
     return (
@@ -41,39 +80,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
-                     <div>
-                        <label htmlFor="workTime" className="block text-sm font-medium text-slate-300 mb-1">Thời gian tập (phút:giây)</label>
-                        <input
-                            type="text"
-                            id="workTime"
-                            value={formatTimeFromSeconds(settings.workTime)}
-                            onChange={(e) => setSettings(prev => ({...prev, workTime: parseTimeToSeconds(e.target.value)}))}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            pattern="[0-9]{2}:[0-9]{2}"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="restTime" className="block text-sm font-medium text-slate-300 mb-1">Thời gian nghỉ (phút:giây)</label>
-                        <input
-                           type="text"
-                            id="restTime"
-                            value={formatTimeFromSeconds(settings.restTime)}
-                            onChange={(e) => setSettings(prev => ({...prev, restTime: parseTimeToSeconds(e.target.value)}))}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            pattern="[0-9]{2}:[0-9]{2}"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="longRestTime" className="block text-sm font-medium text-slate-300 mb-1">Thời gian nghỉ dài (phút:giây)</label>
-                        <input
-                           type="text"
-                            id="longRestTime"
-                            value={formatTimeFromSeconds(settings.longRestTime)}
-                            onChange={(e) => setSettings(prev => ({...prev, longRestTime: parseTimeToSeconds(e.target.value)}))}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            pattern="[0-9]{2}:[0-9]{2}"
-                        />
-                    </div>
+                     <TimeInput 
+                        label="Thời gian tập"
+                        totalSeconds={settings.workTime}
+                        onChange={(newTotal) => setSettings(prev => ({...prev, workTime: newTotal}))}
+                     />
+                    <TimeInput 
+                        label="Thời gian nghỉ"
+                        totalSeconds={settings.restTime}
+                        onChange={(newTotal) => setSettings(prev => ({...prev, restTime: newTotal}))}
+                     />
+                     <TimeInput 
+                        label="Thời gian nghỉ dài"
+                        totalSeconds={settings.longRestTime}
+                        onChange={(newTotal) => setSettings(prev => ({...prev, longRestTime: newTotal}))}
+                     />
                      <div>
                         <label htmlFor="longRestFrequency" className="block text-sm font-medium text-slate-300 mb-1">Nghỉ dài sau mỗi (hiệp)</label>
                         <input
