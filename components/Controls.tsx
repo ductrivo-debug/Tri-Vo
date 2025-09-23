@@ -1,5 +1,6 @@
 import React from 'react';
 import { TimerPhase } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ControlsProps {
     isActive: boolean;
@@ -36,10 +37,12 @@ const SmallButton: React.FC<{ onClick: () => void; children: React.ReactNode; cl
 
 
 const Controls: React.FC<ControlsProps> = ({ isActive, phase, areAlertsMuted, onStartPause, onReset, onSettings, onSoundSettings, onToggleMute, onPlaylist, onHistory, onMusic }) => {
+    const { t } = useLanguage();
+    
     const getStartPauseText = () => {
-        if (phase === TimerPhase.FINISHED) return "Bắt đầu lại";
-        if (isActive) return "Tạm dừng";
-        return "Bắt đầu";
+        if (phase === TimerPhase.FINISHED) return t('restart');
+        if (isActive) return t('pause');
+        return t('start');
     };
     
     const startPauseColor = isActive ? 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-400' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
@@ -54,7 +57,7 @@ const Controls: React.FC<ControlsProps> = ({ isActive, phase, areAlertsMuted, on
                     </Button>
                 </div>
                  <Button onClick={onReset} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Đặt lại
+                    {t('reset')}
                 </Button>
             </div>
             <div className="grid grid-cols-4 gap-3">
@@ -68,21 +71,21 @@ const Controls: React.FC<ControlsProps> = ({ isActive, phase, areAlertsMuted, on
                     </svg>
                 </SmallButton>
                  <SmallButton onClick={onSoundSettings} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Âm thanh
+                    {t('sound')}
                 </SmallButton>
                 <SmallButton onClick={onSettings} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Cài đặt
+                    {t('settings')}
                 </SmallButton>
                  <SmallButton onClick={onPlaylist} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Bài tập
+                    {t('exercises')}
                 </SmallButton>
             </div>
              <div className="grid grid-cols-2 gap-3">
                  <SmallButton onClick={onHistory} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Lịch sử
+                    {t('history')}
                 </SmallButton>
                  <SmallButton onClick={onMusic} className="bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500">
-                    Nhạc
+                    {t('music')}
                 </SmallButton>
             </div>
         </div>

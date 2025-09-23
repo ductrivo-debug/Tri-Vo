@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Exercise } from '../types';
 import CustomExerciseFormModal from './CustomExerciseFormModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ManageExercisesModalProps {
     currentUserPlaylist: Exercise[];
@@ -12,6 +13,7 @@ const ExercisePlaylistModal: React.FC<ManageExercisesModalProps> = ({ currentUse
     const [exercises, setExercises] = useState<Exercise[]>(currentUserPlaylist);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [exerciseToEdit, setExerciseToEdit] = useState<Exercise | null>(null);
+    const { t } = useLanguage();
 
     const openFormForNew = () => {
         setExerciseToEdit(null);
@@ -36,7 +38,7 @@ const ExercisePlaylistModal: React.FC<ManageExercisesModalProps> = ({ currentUse
     };
 
     const handleDelete = (id: string) => {
-        if (window.confirm('Bạn có chắc muốn xóa bài tập này?')) {
+        if (window.confirm(t('confirmDeleteExercise'))) {
             setExercises(prev => prev.filter(ex => ex.id !== id));
         }
     };
@@ -53,7 +55,7 @@ const ExercisePlaylistModal: React.FC<ManageExercisesModalProps> = ({ currentUse
         <>
             <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
                 <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg text-white shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
-                    <h2 className="text-2xl font-bold mb-4 text-center">Quản lý Bài tập</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-center">{t('manageExercises')}</h2>
                     <div className="flex-grow overflow-y-auto pr-2 space-y-2 mb-4 border-t border-b border-slate-700 py-4">
                         {exercises.map((ex, index) => (
                             <div key={ex.id} className="flex items-center justify-between bg-slate-700 p-3 rounded hover:bg-slate-600 transition-colors">
@@ -61,21 +63,21 @@ const ExercisePlaylistModal: React.FC<ManageExercisesModalProps> = ({ currentUse
                                 <div className="flex items-center space-x-3">
                                     <button onClick={() => move(index, index - 1)} disabled={index === 0} className="disabled:opacity-25 text-lg p-1">▲</button>
                                     <button onClick={() => move(index, index + 1)} disabled={index === exercises.length - 1} className="disabled:opacity-25 text-lg p-1">▼</button>
-                                    <button onClick={() => openFormForEdit(ex)} className="text-blue-400 hover:text-blue-300 font-semibold">Sửa</button>
+                                    <button onClick={() => openFormForEdit(ex)} className="text-blue-400 hover:text-blue-300 font-semibold">{t('edit')}</button>
                                     <button onClick={() => handleDelete(ex.id)} className="text-red-500 hover:text-red-400 font-bold text-xl">×</button>
                                 </div>
                             </div>
                         ))}
                         {exercises.length === 0 && (
-                            <p className="text-slate-500 text-center py-8">Chưa có bài tập nào. Hãy tạo bài tập mới!</p>
+                            <p className="text-slate-500 text-center py-8">{t('noExercises')}</p>
                         )}
                     </div>
                     <button onClick={openFormForNew} className="w-full py-3 px-4 mb-4 bg-green-600 hover:bg-green-700 rounded-md font-semibold transition-colors text-lg">
-                        + Tạo bài tập mới
+                        + {t('createNewExercise')}
                     </button>
                     <div className="flex space-x-4">
-                        <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">Hủy</button>
-                        <button onClick={() => onSave(exercises)} className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors">Lưu & Đóng</button>
+                        <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">{t('cancel')}</button>
+                        <button onClick={() => onSave(exercises)} className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors">{t('saveAndClose')}</button>
                     </div>
                 </div>
             </div>

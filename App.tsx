@@ -10,10 +10,58 @@ import MusicService from './services/MusicService';
 import HistoryModal from './components/HistoryModal';
 import ExercisePlaylistModal from './components/ExercisePlaylistModal';
 import MusicModal from './components/MusicModal';
+import { useLanguage } from './contexts/LanguageContext';
+import { translations } from './translations';
 
 type PlayMode = 'SEQUENTIAL' | 'SHUFFLE';
 
+const LanguageSelector: React.FC = () => {
+    const { locale, setLocale } = useLanguage();
+
+    const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setLocale(e.target.value as keyof typeof translations);
+    };
+
+    return (
+        <div className="absolute top-4 right-4 z-20">
+            <select
+                value={locale}
+                onChange={handleLanguageChange}
+                aria-label="Select language"
+                className="bg-slate-700 text-white text-sm rounded-md py-1 px-2 border border-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+                <option value="en">English</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="es">Español</option>
+                <option value="ru">Русский</option>
+                <option value="zh">中文</option>
+            </select>
+        </div>
+    );
+};
+
+// FIX: Moved helper functions outside of the component to fix scoping issues and improve code structure.
+// --- LocalStorage Logic ---
+function getInitialSettings<T>(key: string, defaultConfig: T): T {
+    try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : defaultConfig;
+    } catch (error) {
+        console.error(`Could not load ${key} from localStorage`, error);
+        return defaultConfig;
+    }
+}
+
+const usePersistedState = <T,>(key: string, state: T) => {
+    useEffect(() => {
+        try { localStorage.setItem(key, JSON.stringify(state)); }
+        catch (e) { console.error(`Failed to save ${key}`, e); }
+    }, [key, state]);
+};
+
+
 const App: React.FC = () => {
+    const { t } = useLanguage();
     // --- State Initialization ---
     const [settings, setSettings] = useState<WorkoutSettings>(() => getInitialSettings('silverbackMmaSettings', {
         rounds: 12, workTime: 180, restTime: 60, longRestTime: 120, longRestFrequency: 4,
@@ -46,6 +94,28 @@ const App: React.FC = () => {
     const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState<boolean>(false);
     const [isMusicModalOpen, setIsMusicModalOpen] = useState<boolean>(false);
     
+    // FIX: Moved handleGoToNextTrack before its usage in musicServiceRef to resolve "used before declaration" scope issue.
+    const handleGoToNextTrack = useCallback(() => {
+        if (playlist.length === 0) return;
+        
+        setCurrentTrackIndex(prevIndex => {
+            if (prevIndex === null) return 0;
+            
+            if (playMode === 'SHUFFLE') {
+                if (playlist.length <= 1) return 0;
+                let nextIndex;
+                do {
+                    nextIndex = Math.floor(Math.random() * playlist.length);
+                } while (nextIndex === prevIndex);
+                return nextIndex;
+            } else { // SEQUENTIAL
+                return (prevIndex + 1) % playlist.length;
+            }
+        });
+
+        if (!isMusicPlaying) setIsMusicPlaying(true);
+    }, [playlist, playMode, isMusicPlaying]);
+
     const musicServiceRef = useRef(new MusicService(() => {
         // onTrackEnd callback
         handleGoToNextTrack();
@@ -62,25 +132,6 @@ const App: React.FC = () => {
             musicServiceRef.current.pause();
         }
     }, [currentTrackIndex, isMusicPlaying, playlist]);
-
-
-    // --- LocalStorage Logic ---
-    function getInitialSettings<T>(key: string, defaultConfig: T): T {
-        try {
-            const saved = localStorage.getItem(key);
-            return saved ? JSON.parse(saved) : defaultConfig;
-        } catch (error) {
-            console.error(`Could not load ${key} from localStorage`, error);
-            return defaultConfig;
-        }
-    }
-
-    const usePersistedState = <T,>(key: string, state: T) => {
-        useEffect(() => {
-            try { localStorage.setItem(key, JSON.stringify(state)); }
-            catch (e) { console.error(`Failed to save ${key}`, e); }
-        }, [key, state]);
-    };
 
     usePersistedState('silverbackMmaSettings', settings);
     usePersistedState('silverbackMmaSoundSettings', soundSettings);
@@ -189,27 +240,6 @@ const App: React.FC = () => {
         }
     };
     
-    const handleGoToNextTrack = useCallback(() => {
-        if (playlist.length === 0) return;
-        
-        setCurrentTrackIndex(prevIndex => {
-            if (prevIndex === null) return 0;
-            
-            if (playMode === 'SHUFFLE') {
-                if (playlist.length <= 1) return 0;
-                let nextIndex;
-                do {
-                    nextIndex = Math.floor(Math.random() * playlist.length);
-                } while (nextIndex === prevIndex);
-                return nextIndex;
-            } else { // SEQUENTIAL
-                return (prevIndex + 1) % playlist.length;
-            }
-        });
-
-        if (!isMusicPlaying) setIsMusicPlaying(true);
-    }, [playlist, playMode, isMusicPlaying]);
-
     const handleMusicPlayPause = () => {
         if (playlist.length === 0) return;
         if (currentTrackIndex === null) {
@@ -245,13 +275,14 @@ const App: React.FC = () => {
     
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-slate-900 font-sans">
+            <LanguageSelector />
             <div className="w-full max-w-md mx-auto flex flex-col items-center">
                 <header className="w-full text-center mb-8">
                     <h1 className="text-5xl font-black tracking-tighter uppercase">
-                        <span className="bg-gradient-to-r from-slate-300 to-white text-transparent bg-clip-text">Silverback</span>
-                        <span className="text-red-500"> MMA</span>
+                        <span className="bg-gradient-to-r from-slate-300 to-white text-transparent bg-clip-text">{t('silverback')}</span>
+                        <span className="text-red-500"> {t('mma')}</span>
                     </h1>
-                    <p className="text-slate-400 font-medium tracking-wider mt-1">WORKOUT TIMER</p>
+                    <p className="text-slate-400 font-medium tracking-wider mt-1">{t('workoutTimer')}</p>
                 </header>
                 <main className="flex flex-col items-center justify-center w-full">
                     <TimerDisplay phase={phase} timeLeft={timeLeft} totalTime={getTotalTime()} currentRound={currentRound} totalRounds={settings.rounds} />

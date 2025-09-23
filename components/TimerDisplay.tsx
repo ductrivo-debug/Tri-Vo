@@ -1,5 +1,6 @@
 import React from 'react';
 import { TimerPhase } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TimerDisplayProps {
     phase: TimerPhase;
@@ -36,6 +37,7 @@ const CircularProgress: React.FC<{ progress: number; color: string }> = ({ progr
 };
 
 const TimerDisplay: React.FC<TimerDisplayProps> = ({ phase, timeLeft, totalTime, currentRound, totalRounds }) => {
+    const { t } = useLanguage();
     
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -65,19 +67,19 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({ phase, timeLeft, totalTime,
                     className="text-lg font-semibold uppercase tracking-widest"
                     style={{ color: phaseColor }}
                  >
-                    {phase}
+                    {t(phase)}
                 </p>
                 <h2 className="text-6xl sm:text-7xl font-mono font-bold my-2">
                     {formatTime(timeLeft)}
                 </h2>
                 {phase !== TimerPhase.FINISHED && phase !== TimerPhase.PREPARE &&
                     <p className="text-xl text-slate-400">
-                        Hiệp {currentRound} / {totalRounds}
+                        {t('round')} {currentRound} / {totalRounds}
                     </p>
                 }
                  {phase === TimerPhase.FINISHED &&
                     <p className="text-xl text-slate-400">
-                        Tuyệt vời!
+                        {t('greatJob')}
                     </p>
                 }
             </div>

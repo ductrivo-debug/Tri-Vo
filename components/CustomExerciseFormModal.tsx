@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Exercise, ExerciseCategory } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CustomExerciseFormModalProps {
     exerciseToEdit: Exercise | null;
@@ -8,6 +9,7 @@ interface CustomExerciseFormModalProps {
 }
 
 const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerciseToEdit, onSave, onClose }) => {
+    const { t } = useLanguage();
     const [exercise, setExercise] = useState({
         name: '',
         description: '',
@@ -28,7 +30,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
 
     const handleSave = () => {
         if (!exercise.name.trim()) {
-            alert('Vui lòng nhập tên bài tập.');
+            alert(t('enterExerciseName'));
             return;
         }
         if (exerciseToEdit) {
@@ -47,10 +49,10 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-sm text-white shadow-2xl animate-fade-in">
-                <h2 className="text-2xl font-bold mb-6 text-center">{exerciseToEdit ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'}</h2>
+                <h2 className="text-2xl font-bold mb-6 text-center">{exerciseToEdit ? t('editExercise') : t('createNewExercise')}</h2>
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">Tên bài tập</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">{t('exerciseName')}</label>
                         <input
                             type="text"
                             id="name"
@@ -62,7 +64,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                         />
                     </div>
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">Mô tả</label>
+                        <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">{t('description')}</label>
                         <textarea
                             id="description"
                             name="description"
@@ -73,7 +75,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                         />
                     </div>
                     <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">Danh mục</label>
+                        <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">{t('category')}</label>
                         <select
                             id="category"
                             name="category"
@@ -81,12 +83,12 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                             onChange={handleChange}
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value={ExerciseCategory.BOXING}>Boxing</option>
-                            <option value={ExerciseCategory.ENDURANCE}>Thể lực & Sức bền</option>
+                            <option value={ExerciseCategory.BOXING}>{t('BOXING')}</option>
+                            <option value={ExerciseCategory.ENDURANCE}>{t('ENDURANCE')}</option>
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-300 mb-1">URL Hình ảnh (Tùy chọn)</label>
+                        <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-300 mb-1">{t('imageUrl')}</label>
                         <input
                             type="text"
                             id="imageUrl"
@@ -100,10 +102,10 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                 </div>
                 <div className="mt-8 flex space-x-4">
                     <button onClick={onClose} className="w-full py-2 px-4 bg-slate-600 hover:bg-slate-500 rounded-md font-semibold transition-colors">
-                        Hủy
+                        {t('cancel')}
                     </button>
                     <button onClick={handleSave} className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors">
-                        Lưu
+                        {t('save')}
                     </button>
                 </div>
             </div>

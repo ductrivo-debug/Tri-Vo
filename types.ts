@@ -1,9 +1,9 @@
 export enum TimerPhase {
-    PREPARE = 'Chuẩn bị',
-    WORK = 'TẬP',
-    REST = 'NGHỈ',
-    LONG_REST = 'NGHỈ DÀI',
-    FINISHED = 'Hoàn thành'
+    PREPARE = 'PREPARE',
+    WORK = 'WORK',
+    REST = 'REST',
+    LONG_REST = 'LONG_REST',
+    FINISHED = 'FINISHED'
 }
 
 export interface WorkoutSettings {
@@ -22,8 +22,8 @@ export interface WorkoutSession {
 }
 
 export enum ExerciseCategory {
-    BOXING = 'Boxing',
-    ENDURANCE = 'Thể lực & Sức bền'
+    BOXING = 'BOXING',
+    ENDURANCE = 'ENDURANCE'
 }
 
 export interface Exercise {
@@ -35,15 +35,15 @@ export interface Exercise {
 }
 
 export enum SoundType {
-    BELL = 'Chuông',
-    GONG = 'Cồng',
-    BEEP = 'Bíp',
-    SYNTH = 'Điện tử',
-    ALARM = 'Báo động',
-    BUZZER = 'Còi rè',
-    WHISTLE = 'Còi a-go-go',
-    AIR_HORN = 'Kèn hơi',
-    CUSTOM = 'Tùy chỉnh'
+    BELL = 'BELL',
+    GONG = 'GONG',
+    BEEP = 'BEEP',
+    SYNTH = 'SYNTH',
+    ALARM = 'ALARM',
+    BUZZER = 'BUZZER',
+    WHISTLE = 'WHISTLE',
+    AIR_HORN = 'AIR_HORN',
+    CUSTOM = 'CUSTOM'
 }
 
 export interface SoundSetting {
