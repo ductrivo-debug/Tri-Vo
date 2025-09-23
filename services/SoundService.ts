@@ -79,6 +79,29 @@ class SoundService {
         }
     }
 
+    public static speak(text: string, lang: string = 'en-US', volume: number = 1.0) {
+        if ('speechSynthesis' in window) {
+            // Cancel any ongoing or queued speech to ensure only the current number is spoken
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.volume = volume;
+
+            // Some browsers need a moment for getVoices() to populate.
+            // We'll try to find a matching voice, but fall back to the browser default.
+            const voices = window.speechSynthesis.getVoices();
+            const voice = voices.find(v => v.lang === lang || v.lang.startsWith(lang.split('-')[0]));
+            if (voice) {
+                utterance.voice = voice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn('Speech Synthesis API not supported in this browser.');
+        }
+    }
+
     public static playSound(setting: SoundSetting) {
         this.init();
         if (!this.audioContext) return;

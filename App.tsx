@@ -38,6 +38,8 @@ const DEFAULT_SOUND_SETTINGS: SoundSettings = {
 };
 
 const PREPARE_TIME = 10;
+const WARNING_TIME = 10;
+
 
 // Custom hook for local storage
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -68,6 +70,17 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 
     return [storedValue, setValue];
 }
+
+const mapLocaleToSpeechLang = (loc: string): string => {
+    switch(loc) {
+        case 'en': return 'en-US';
+        case 'vi': return 'vi-VN';
+        case 'es': return 'es-ES';
+        case 'ru': return 'ru-RU';
+        case 'zh': return 'zh-CN';
+        default: return 'en-US';
+    }
+};
 
 
 const App: React.FC = () => {
@@ -213,8 +226,19 @@ const App: React.FC = () => {
 
     // Phase transition logic
     useEffect(() => {
-        if (timeLeft === 3 && (phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST)) {
-            SoundService.playSound(soundSettings.warning);
+        if (isWorkoutActive) {
+            const speechLang = mapLocaleToSpeechLang(locale);
+            const shouldCountdown = 
+                (phase === TimerPhase.PREPARE && timeLeft <= PREPARE_TIME && timeLeft > 0) ||
+                ((phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST) && timeLeft <= WARNING_TIME && timeLeft > 0);
+
+            if (shouldCountdown) {
+                SoundService.speak(timeLeft.toString(), speechLang, soundSettings.warning.volume);
+            }
+        }
+        
+        if (timeLeft === WARNING_TIME && (phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST)) {
+            // The old beep warning is replaced by the countdown
             if (isMusicPlaying) musicServiceRef.current?.duckVolume();
         }
         if (timeLeft === 1 && (phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST)) {
@@ -331,6 +355,9 @@ const App: React.FC = () => {
         setTotalTime(PREPARE_TIME);
         sessionStartTimeRef.current = null;
         if (isMusicPlaying) musicServiceRef.current?.restoreVolume();
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
     };
 
 
@@ -454,8 +481,7 @@ const App: React.FC = () => {
                     aria-label="Select language"
                 >
                     {languages.map(lang => (
-                        <option key={lang.code} value={lang.code}>{lang.name}</option>
-                    ))}
+                        <option key={lang.code} value={lang.code}>{lang.name}</option>                    ))}
                 </select>
             </footer>
 
