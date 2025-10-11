@@ -29,12 +29,15 @@ const MusicModal: React.FC<MusicModalProps> = ({
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const newFiles = Array.from(event.target.files);
-            const newTracks: Track[] = newFiles.map(file => ({
+            // FIX: Explicitly type `file` as `File` to resolve type inference issues.
+            const newTracks: Track[] = newFiles.map((file: File) => ({
                 id: `${file.name}-${file.lastModified}-${Math.random()}`,
                 name: file.name.replace(/\.[^/.]+$/, ""), // remove extension
                 file: file,
             }));
-            onAddTracks([...playlist, ...newTracks]);
+            // FIX: Pass only the new tracks to the parent component.
+            // The parent is responsible for appending them to the existing playlist.
+            onAddTracks(newTracks);
         }
     };
 

@@ -94,12 +94,37 @@ const App: React.FC = () => {
     
     const intervalRef = useRef<number | null>(null);
     const musicServiceRef = useRef<MusicService | null>(null);
+    const wakeLockSentinelRef = useRef<any>(null); // For Screen Wake Lock API
 
     const currentExercise = playlist && playlist.length > 0 ? playlist[ (currentRound - 1) % playlist.length ] : null;
     const nextExercise = playlist && playlist.length > 0 ? playlist[ currentRound % playlist.length ] : null;
 
 
     // ======== EFFECTS & LOGIC ========
+    
+    // Screen Wake Lock logic
+    const requestWakeLock = useCallback(async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLockSentinelRef.current = await navigator.wakeLock.request('screen');
+                wakeLockSentinelRef.current.addEventListener('release', () => {
+                    // Sentinel is automatically released when tab is not visible.
+                    // No need to clear ref here, it will be re-acquired on visibility change.
+                     console.log('Screen Wake Lock was released.');
+                });
+                console.log('Screen Wake Lock is active.');
+            } catch (err: any) {
+                console.error(`Wake Lock request failed: ${err.name}, ${err.message}`);
+            }
+        }
+    }, []);
+
+    const releaseWakeLock = useCallback(async () => {
+        if (wakeLockSentinelRef.current) {
+            await wakeLockSentinelRef.current.release();
+            wakeLockSentinelRef.current = null;
+        }
+    }, []);
 
     // Data migration for exercises without duration
     useEffect(() => {
@@ -146,7 +171,8 @@ const App: React.FC = () => {
         setTimeLeft(10);
         setCurrentRound(1);
         setSessionStartTime(null);
-    }, []);
+        releaseWakeLock();
+    }, [releaseWakeLock]);
 
     const langCode = locale === 'vi' ? 'vi-VN' : locale === 'es' ? 'es-ES' : locale === 'ru' ? 'ru-RU' : locale === 'zh' ? 'zh-CN' : 'en-US';
 
@@ -165,6 +191,67 @@ const App: React.FC = () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
     }, [isActive]);
+
+    // Handle visibility change for timer drift correction and wake lock re-acquisition
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+             if (document.visibilityState === 'visible' && isActive && sessionStartTime) {
+                // Re-acquire wake lock if it was released by the browser
+                requestWakeLock();
+                
+                // Correct timer drift by calculating state based on total elapsed time
+                const totalElapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+
+                let time = 0;
+                let round = 1;
+                
+                // Prepare phase
+                time += 10;
+                if (totalElapsedSeconds < time) {
+                    setPhase(TimerPhase.PREPARE);
+                    setCurrentRound(1);
+                    setTimeLeft(time - totalElapsedSeconds);
+                    return;
+                }
+                
+                // Rounds
+                while (round <= settings.rounds) {
+                    // Work phase
+                    const workDuration = playlist?.length > 0 ? (playlist[(round - 1) % playlist.length]?.duration ?? settings.workTime) : settings.workTime;
+                    time += workDuration;
+                    if (totalElapsedSeconds < time) {
+                        setPhase(TimerPhase.WORK);
+                        setCurrentRound(round);
+                        setTimeLeft(time - totalElapsedSeconds);
+                        return;
+                    }
+                    if (round === settings.rounds) break;
+
+                    // Rest phase
+                    const isLongRest = settings.longRestFrequency > 0 && round % settings.longRestFrequency === 0;
+                    const restDuration = isLongRest ? settings.longRestTime : settings.restTime;
+                    time += restDuration;
+                    if (totalElapsedSeconds < time) {
+                        setPhase(isLongRest ? TimerPhase.LONG_REST : TimerPhase.REST);
+                        setCurrentRound(round);
+                        setTimeLeft(time - totalElapsedSeconds);
+                        return;
+                    }
+                    round++;
+                }
+
+                // If loop finishes, workout is done
+                setPhase(TimerPhase.FINISHED);
+                setCurrentRound(settings.rounds);
+                setTimeLeft(0);
+                setIsActive(false);
+             }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isActive, sessionStartTime, settings, playlist, requestWakeLock]);
+
 
     // Phase transition logic
     useEffect(() => {
@@ -192,6 +279,7 @@ const App: React.FC = () => {
                 if (currentRound >= settings.rounds) {
                     setPhase(TimerPhase.FINISHED);
                     setIsActive(false);
+                    releaseWakeLock();
                     // Save session to history
                     if (sessionStartTime) {
                         const newSession: WorkoutSession = {
@@ -223,15 +311,21 @@ const App: React.FC = () => {
                 break;
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [timeLeft, phase, isActive, currentRound, settings, soundSettings, sessionStartTime, setHistory, playlist]);
+    }, [timeLeft, phase, isActive, currentRound, settings, soundSettings, sessionStartTime, setHistory, playlist, releaseWakeLock]);
 
     // ======== HANDLERS ========
     const handleStart = () => {
         if (phase === TimerPhase.FINISHED) resetTimer();
         setIsActive(true);
+        requestWakeLock();
         if (!sessionStartTime) {
             setSessionStartTime(Date.now());
         }
+    };
+
+    const handlePause = () => {
+        setIsActive(false);
+        releaseWakeLock();
     };
     
     const handleAddOrUpdateExercise = (exerciseData: Omit<Exercise, 'id'> | Exercise) => {
@@ -307,7 +401,7 @@ const App: React.FC = () => {
                 <Controls
                     isActive={isActive}
                     onStart={handleStart}
-                    onPause={() => setIsActive(false)}
+                    onPause={handlePause}
                     onReset={resetTimer}
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     onOpenHistory={() => setIsHistoryOpen(true)}
