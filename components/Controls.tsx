@@ -1,4 +1,5 @@
 import React from 'react';
+import { libraryUI } from '../services/LibraryLocalization';
 import { useLanguage } from '../contexts/LanguageContext';
 interface ControlsProps {
  isActive:boolean; onStart:()=>void; onPause:()=>void; onReset:()=>void;
@@ -18,7 +19,7 @@ export default function Controls(p:ControlsProps) {
   <div className="mobile-dock">
    <div className="mobile-primary"><button className="reset-control" aria-label={t('reset')} onClick={()=>{if(!p.isActive || window.confirm(locale==='vi'?'Đặt lại buổi đang tập?':'Reset the current workout?'))p.onReset();}}><Icon kind="reset"/></button><button className={'start-control'+(p.isActive?' running':'')} onClick={p.isActive?p.onPause:p.onStart}><span aria-hidden="true">{p.isActive?'Ⅱ':'▶'}</span>{p.isActive?t('pause'):t('start')}</button></div>
    <nav aria-label={locale==='vi'?'Chức năng tập luyện':'Workout tools'} className="mobile-nav">
-    <button onClick={p.onOpenLibrary}><Icon kind="library"/><span>{locale==='vi'?'Thư viện':'Library'}</span></button>
+    <button onClick={p.onOpenLibrary}><Icon kind="library"/><span>{libraryUI(locale).title}</span></button>
     <button onClick={p.onOpenPlans}><Icon kind="plans"/><span>{t('plans')}</span></button>
     <button onClick={p.onOpenMusic}><Icon kind="music"/><span>{t('music')}</span></button>
     <button onClick={p.onOpenSettings}><Icon kind="settings"/><span>{t('settings')}</span></button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Exercise } from '../types';
 import CustomExerciseFormModal from './CustomExerciseFormModal';
+import { localizeExercise } from '../services/LibraryLocalization';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ExercisePlaylistModalProps {
@@ -19,7 +20,7 @@ const formatTime = (seconds: number): string => {
 };
 
 const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist, allExercises, onClose, onUpdatePlaylist, onAddOrUpdateExercise, onDeleteExercise }) => {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [isCustomFormOpen, setIsCustomFormOpen] = useState(false);
     const [exerciseToEdit, setExerciseToEdit] = useState<Exercise | null>(null);
     
@@ -65,7 +66,7 @@ const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist,
                                 {playlist.length === 0 && <p className="text-slate-500 text-center py-8">{t('noExercisesInPlaylist')}</p>}
                                 {playlist.map((exercise, index) => (
                                     <div key={exercise.id + index} className="bg-slate-700 p-2 rounded-md flex items-center justify-between">
-                                        <span className="truncate flex-1">{exercise.name} <span className="text-slate-400 text-xs">({formatTime(exercise.duration)})</span></span>
+                                        <span className="truncate flex-1">{localizeExercise(exercise,locale).name} <span className="text-slate-400 text-xs">({formatTime(exercise.duration)})</span></span>
                                         <button onClick={() => onUpdatePlaylist(playlist.filter((_, i) => i !== index))} className="ml-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs font-bold">X</button>
                                     </div>
                                 ))}
@@ -79,7 +80,7 @@ const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist,
                                 {allExercises.map(exercise => (
                                      <div key={exercise.id} className="bg-slate-700 p-2 rounded-md flex items-center justify-between">
                                         <div className="truncate flex-1">
-                                            {exercise.name} <span className="text-slate-400 text-xs">({formatTime(exercise.duration)})</span>
+                                            {localizeExercise(exercise,locale).name} <span className="text-slate-400 text-xs">({formatTime(exercise.duration)})</span>
                                         </div>
                                         <div className="flex space-x-1 ml-2">
                                             {!playlist.some(pEx => pEx.id === exercise.id) && 

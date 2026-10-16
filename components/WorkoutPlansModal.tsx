@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkoutPlan, Exercise } from '../types';
 import WorkoutPlanFormModal from './WorkoutPlanFormModal';
+import { localizePlan } from '../services/LibraryLocalization';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface WorkoutPlansModalProps {
@@ -12,7 +13,7 @@ interface WorkoutPlansModalProps {
 }
 
 const WorkoutPlansModal: React.FC<WorkoutPlansModalProps> = ({ plans, allExercises, onClose, onLoadPlan, onSavePlans }) => {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [planToEdit, setPlanToEdit] = useState<WorkoutPlan | null>(null);
 
@@ -55,7 +56,7 @@ const WorkoutPlansModal: React.FC<WorkoutPlansModalProps> = ({ plans, allExercis
                         {plans.map(plan => (
                             <div key={plan.id} className="plan-row bg-slate-700 p-3 rounded-lg flex flex-col justify-between">
                                 <div className="flex-1 mb-3 sm:mb-0">
-                                    <p className="font-semibold text-lg">{plan.name}</p>
+                                    <p className="font-semibold text-lg">{localizePlan(plan,locale).name}</p>
                                     <p className="text-xs text-slate-400">{plan.exerciseIds.length} {t('playlist')}</p>
                                 </div>
                                 <div className="flex items-center space-x-2">

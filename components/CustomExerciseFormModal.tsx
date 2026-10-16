@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Exercise, ExerciseCategory } from '../types';
-import { SPORTS } from '../services/WorkoutLibrary';
+import { localizeExercise, sportLabel, libraryUI } from '../services/LibraryLocalization';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface CustomExerciseFormModalProps {
@@ -14,7 +14,7 @@ const TimeInput: React.FC<{
     totalSeconds: number;
     onChange: (newTotalSeconds: number) => void;
 }> = ({ label, totalSeconds, onChange }) => {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const currentMinutes = Math.floor(totalSeconds / 60);
     const currentSeconds = totalSeconds % 60;
 
@@ -60,7 +60,7 @@ const TimeInput: React.FC<{
 
 
 const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerciseToEdit, onSave, onClose }) => {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState<ExerciseCategory>(ExerciseCategory.CUSTOM);
@@ -76,7 +76,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
     }, [exerciseToEdit]);
 
     const handleSave = () => {
-        if (duration <= 0) { alert('Thời gian bài tập phải lớn hơn 0 giây.'); return; }
+        if (duration <= 0) { alert(libraryUI(locale).positiveTime); return; }
         if (!name.trim()) {
             alert(t('enterExerciseName'));
             return;
@@ -108,7 +108,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                         <input
                             type="text"
                             id="exerciseName"
-                            value={name}
+                            value={exerciseToEdit && name===exerciseToEdit.name ? localizeExercise(exerciseToEdit,locale).name : name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                             required
@@ -123,7 +123,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                         <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">{t('descriptionLabel')}</label>
                         <textarea
                             id="description"
-                            value={description}
+                            value={exerciseToEdit && description===exerciseToEdit.description ? localizeExercise(exerciseToEdit,locale).description : description}
                             onChange={(e) => setDescription(e.target.value)}
                              className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                             rows={3}
@@ -138,7 +138,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                         >
                             {Object.values(ExerciseCategory).map(cat => (
-                                <option key={cat} value={cat}>{SPORTS.find(s=>s.id===cat)?.name || t(cat)}</option>
+                                <option key={cat} value={cat}>{sportLabel(cat,locale) || t(cat)}</option>
                             ))}
                         </select>
                     </div>

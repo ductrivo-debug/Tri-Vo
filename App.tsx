@@ -9,6 +9,7 @@ import HistoryModal from './components/HistoryModal';
 import ExercisePlaylistModal from './components/ExercisePlaylistModal';
 import WorkoutPlansModal from './components/WorkoutPlansModal';
 import MusicModal from './components/MusicModal';
+import { libraryUI } from './services/LibraryLocalization';
 import TrainingLibraryModal from './components/TrainingLibraryModal';
 import { mergeExercises, resolvePlan, restForRound } from './services/WorkoutLibrary';
 import { useLanguage } from './contexts/LanguageContext';
@@ -32,6 +33,7 @@ const usePersistentState = usePersonalState;
 
 const App: React.FC = () => {
     const { t, locale, setLocale } = useLanguage();
+    const libraryText = libraryUI(locale);
     
     // ======== STATE MANAGEMENT ========
     const [settings, setSettings] = usePersistentState<WorkoutSettings>('workoutSettings', {
@@ -320,14 +322,14 @@ const App: React.FC = () => {
     const handleLoadPlan = (plan: WorkoutPlan) => {
         try {
             const planExercises = resolvePlan(plan, allExercises);
-            if (!planExercises.length) { alert('Giáo án chưa có bài tập.'); return; }
-            if (isActive && !window.confirm('Dừng buổi đang tập và nạp giáo án mới?')) return;
+            if (!planExercises.length) { alert(libraryText.emptyPlan); return; }
+            if (isActive && !window.confirm(libraryText.replacePlan)) return;
             resetTimer();
             setPlaylist(planExercises);
             setSettings({...settings, ...plan.settings, rounds: planExercises.length});
             setIsPlansOpen(false);
             setIsLibraryOpen(false);
-        } catch (error) { alert((error as Error).message); }
+        } catch (error) { alert(libraryText.missingPlan); }
     };
 
     const totalTime = (() => {
@@ -395,7 +397,7 @@ const App: React.FC = () => {
                 onClose={() => setIsLibraryOpen(false)} onLoad={handleLoadPlan} savedPlans={plans}
                 onSave={plan => setPlans(prev => prev.some(p=>p.id===plan.id) ? prev : [...prev, plan])}
                 onAdd={exercise => {
-                    if (isActive) { alert('Tạm dừng buổi tập trước khi thêm bài.'); return false; }
+                    if (isActive) { alert(libraryText.pauseAdd); return false; }
                     resetTimer();
                     setPlaylist(prev => [...prev, exercise]);
                     setSettings(prev => ({...prev, rounds:playlist.length+1}));
@@ -436,7 +438,7 @@ const App: React.FC = () => {
                     allExercises={allExercises}
                     onClose={() => setIsPlaylistOpen(false)}
                     onUpdatePlaylist={next => {
-                        if (isActive) { alert('Tạm dừng buổi tập trước khi đổi danh sách.'); return; }
+                        if (isActive) { alert(libraryText.pauseChange); return; }
                         resetTimer(); setPlaylist(next);
                         setSettings(prev=>({...prev,rounds:Math.max(1,next.length)}));
                     }}
