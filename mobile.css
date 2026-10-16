@@ -15,11 +15,11 @@ input[type=checkbox] { width:22px;height:22px;vertical-align:middle; }
 .sync-status { min-height:24px;padding:4px 16px;font-size:11px;color:#94a3b8;text-align:left; }
 .phone-app { flex:1;display:grid;grid-template-rows:auto minmax(min-content,1fr) minmax(min-content,.6fr) auto;align-items:center;gap:clamp(8px,1.4dvh,18px);padding:8px 16px 0;min-height:0;width:100%; }
 .phone-session { display:contents; }
-.phone-header { width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px; }
-.phone-brand { color:#fff;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1; }
+.phone-header { width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px; }
+.phone-brand { color:#fff;font-size:38px;white-space:nowrap;font-weight:800;letter-spacing:-.5px;line-height:1.1; }
 .phone-brand span { color:#ef4444; }
 .phone-brand small { display:block;font-size:10px;font-weight:500;color:#94a3b8;letter-spacing:2px;margin-top:6px; }
-.phone-header select { width:112px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;font-size:12px!important; }
+.phone-header select { width:100px;margin-left:auto;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;font-size:12px!important; }
 .phone-timer { position:relative;width:min(82vw,340px,31dvh);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin:0 auto;flex-shrink:0; }
 .timer-phase { font-size:clamp(13px,4vw,18px);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;max-width:210px;margin:auto; }
 .timer-digits { font-size:clamp(54px,17vw,76px);font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace;line-height:1.2;font-weight:800;letter-spacing:-4px;margin:6px 0; }

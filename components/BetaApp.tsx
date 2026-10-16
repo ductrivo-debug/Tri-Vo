@@ -24,6 +24,10 @@ export default function BetaApp() {
       if (!active) return;
       if (error) setMessage('Không khôi phục được đăng nhập. Vui lòng đăng nhập lại.');
       setSession(data.session); setReady(true);
+    }).catch(() => {
+      if (!active) return;
+      setMessage('Không khôi phục được phiên. Kiểm tra kết nối rồi thử đăng nhập lại.');
+      setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next); setReady(true);
@@ -86,6 +90,7 @@ export default function BetaApp() {
         <h2 className="text-xl">{signup ? 'Tạo tài khoản' : 'Đăng nhập'}</h2>
         <label className="block">Email<input className="block w-full bg-slate-800 rounded p-3 mt-1" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label className="block">Mật khẩu<input className="block w-full bg-slate-800 rounded p-3 mt-1" type="password" minLength={8} autoComplete={signup ? 'new-password' : 'current-password'} required value={password} onChange={e => setPassword(e.target.value)} /></label>
+        <p className="text-xs text-slate-400">Tự động duy trì đăng nhập trên thiết bị này. Lần sau hãy mở cùng địa chỉ riotimers.netlify.app bằng trình duyệt này; không cần bấm Đăng xuất khi đóng app.</p>
         <button disabled={busy} className="w-full bg-red-600 rounded p-3 disabled:opacity-50">{busy ? 'Đang xử lý…' : signup ? 'Đăng ký' : 'Đăng nhập'}</button>
         <button type="button" className="underline text-slate-300" onClick={() => { setSignup(!signup); setMessage(''); }}>{signup ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}</button>
       </form> : <p className="text-amber-300">Chưa kết nối máy chủ tài khoản. Bạn có thể dùng thử bộ đếm giờ bên dưới.</p>}
