@@ -2,7 +2,7 @@
 * { box-sizing:border-box; }
 html { min-width:280px; scroll-padding-bottom:180px; }
 body { margin:0; user-select:auto; -webkit-text-size-adjust:100%; }
-#root { width:100%; max-width:480px; min-height:100dvh; margin:0 auto; background:#0f172a; box-shadow:0 0 80px #0005; }
+#root { display:flex;flex-direction:column;width:100%; max-width:480px; min-height:100dvh; margin:0 auto; background:#0f172a; box-shadow:0 0 80px #0005; }
 button,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
 button { touch-action:manipulation; min-height:44px; min-width:44px; }
 button:focus-visible,a:focus-visible { outline:2px solid #5eead4; outline-offset:3px; }
@@ -13,25 +13,26 @@ input[type=checkbox] { width:22px;height:22px;vertical-align:middle; }
 .account-strip>span { flex:1;min-width:0;overflow-wrap:anywhere; }
 .account-strip>button { flex-shrink:0;color:#cbd5e1;font-size:11px; }
 .sync-status { min-height:24px;padding:4px 16px;font-size:11px;color:#94a3b8;text-align:left; }
-.phone-app { display:flex;flex-direction:column;align-items:center; padding:8px 16px 0; min-height:0; }
+.phone-app { flex:1;display:grid;grid-template-rows:auto minmax(min-content,1fr) minmax(min-content,.6fr) auto;align-items:center;gap:clamp(8px,1.4dvh,18px);padding:8px 16px 0;min-height:0;width:100%; }
+.phone-session { display:contents; }
 .phone-header { width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px; }
 .phone-brand { font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1; }
 .phone-brand span { color:#f87171; }
 .phone-brand small { display:block;font-size:10px;font-weight:500;color:#94a3b8;letter-spacing:2px;margin-top:6px; }
 .phone-header select { width:112px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;font-size:12px!important; }
-.phone-timer { position:relative;width:min(78vw,290px);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin:18px auto 10px;flex-shrink:0; }
+.phone-timer { position:relative;width:min(82vw,340px,31dvh);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin:0 auto;flex-shrink:0; }
 .timer-phase { font-size:clamp(13px,4vw,18px);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;max-width:210px;margin:auto; }
 .timer-digits { font-size:clamp(54px,17vw,76px);font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace;line-height:1.2;font-weight:800;letter-spacing:-4px;margin:6px 0; }
 .timer-round { font-size:14px;color:#94a3b8; }
-.exercise-card { margin-top:12px;width:100%;background:linear-gradient(135deg,#1e293b,#172338);border:1px solid #334155;border-radius:18px;overflow:hidden; }
+.exercise-card { align-self:center;margin-top:0;width:100%;background:linear-gradient(135deg,#1e293b,#172338);border:1px solid #334155;border-radius:18px;overflow:hidden; }
 .exercise-card h3 { font-size:19px;line-height:1.4;overflow-wrap:anywhere; }
 .exercise-card details { font-size:13px;color:#cbd5e1;margin-top:10px; }
 .exercise-card summary { min-height:44px;display:flex;align-items:center;color:#94a3b8;cursor:pointer; }
-.session-tools { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;width:100%; }
+.session-tools { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:0;width:100%; }
 .session-tools button { display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;border:1px solid #334155;background:#162236;border-radius:14px;padding:12px;font-size:13px; }
 .session-tools span { color:#94a3b8; }
 .mobile-dock { position:relative;width:100%;margin-top:10px;padding:12px 0 calc(6px + env(safe-area-inset-bottom));background:#0f172af5;border-top:1px solid #334155;backdrop-filter:blur(16px); }
-.phone-app>footer { position:sticky;bottom:0;z-index:30;background:#0f172a; }
+.phone-app>footer { align-self:end;position:relative;z-index:1;background:#0f172a; }
 .mobile-primary { display:flex;gap:10px; }
 .reset-control { display:flex;align-items:center;justify-content:center;width:56px;border:1px solid #475569;border-radius:15px;background:#1e293b;color:#cbd5e1;flex-shrink:0; }
 .start-control { flex:1;display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;border-radius:15px;background:#ef4444;font-size:19px;font-weight:800;color:white; }
@@ -54,5 +55,10 @@ input[type=checkbox] { width:22px;height:22px;vertical-align:middle; }
 .mobile-dialog .plan-row>div:last-child { display:grid;grid-template-columns:1fr 1fr 44px;gap:8px; }
 .mobile-dialog .plan-row button { margin:0!important; }
 .auth-screen { min-height:100dvh;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom)); }
-@media (max-height:700px) { .phone-timer { width:min(65vw,230px);margin-top:10px; } .timer-digits { font-size:58px; } .timer-phase { font-size:14px; } }
+@media (max-height:700px) { .phone-timer { width:min(64vw,220px);margin:0 auto; } .timer-digits { font-size:58px; } .timer-phase { font-size:14px; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important;transition:none!important;scroll-behavior:auto!important; } }
+
+/* Distribute spare height across the timer and exercise rows, not one empty spacer. */
+.exercise-card>div { padding:12px 16px; }
+.phone-app>header,.phone-app>footer { min-width:0; }
+@media (max-height:700px) { .phone-app { gap:8px; } .phone-brand small { display:none; } }

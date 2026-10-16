@@ -359,7 +359,7 @@ const App: React.FC = () => {
                 </select>
             </header>
             
-            <div className="w-full flex flex-col items-center">
+            <div className="phone-session">
                  <TimerDisplay 
                     phase={phase}
                     timeLeft={timeLeft}
