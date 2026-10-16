@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkoutPlan, Exercise } from '../types';
 import WorkoutPlanFormModal from './WorkoutPlanFormModal';
+import { localizePlan } from '../services/LibraryLocalization';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface WorkoutPlansModalProps {
@@ -12,7 +13,7 @@ interface WorkoutPlansModalProps {
 }
 
 const WorkoutPlansModal: React.FC<WorkoutPlansModalProps> = ({ plans, allExercises, onClose, onLoadPlan, onSavePlans }) => {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [planToEdit, setPlanToEdit] = useState<WorkoutPlan | null>(null);
 
@@ -48,14 +49,14 @@ const WorkoutPlansModal: React.FC<WorkoutPlansModalProps> = ({ plans, allExercis
 
     return (
         <>
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
                 <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg text-white shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
                     <h2 className="text-2xl font-bold mb-4 text-center">{t('workoutPlans')}</h2>
                     <div className="flex-grow overflow-y-auto pr-2 space-y-3 mb-4 border-t border-b border-slate-700 py-4">
                         {plans.map(plan => (
-                            <div key={plan.id} className="bg-slate-700 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between">
+                            <div key={plan.id} className="plan-row bg-slate-700 p-3 rounded-lg flex flex-col justify-between">
                                 <div className="flex-1 mb-3 sm:mb-0">
-                                    <p className="font-semibold text-lg">{plan.name}</p>
+                                    <p className="font-semibold text-lg">{localizePlan(plan,locale).name}</p>
                                     <p className="text-xs text-slate-400">{plan.exerciseIds.length} {t('playlist')}</p>
                                 </div>
                                 <div className="flex items-center space-x-2">

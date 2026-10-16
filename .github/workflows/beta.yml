@@ -1,0 +1,20 @@
+name: Beta validation
+on:
+  pull_request:
+  push:
+    branches: [beta/personal-accounts]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: node --experimental-strip-types --test tests/music.test.mjs tests/timer-audio.test.mjs tests/workout-library.test.mjs tests/library-localization.test.mjs
+      - run: npm run typecheck
+      - run: npm run build
+
