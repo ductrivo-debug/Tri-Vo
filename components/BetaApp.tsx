@@ -80,7 +80,7 @@ export default function BetaApp() {
   </>;
   return <main className="auth-screen bg-slate-900 flex items-center justify-center p-5">
     <section className="w-full max-w-sm space-y-5">
-      <header><p className="text-red-400 text-sm">BẢN THỬ NGHIỆM</p><h1 className="text-4xl font-bold">SILVERBACK <span className="text-red-500">MMA</span></h1>
+      <header><p className="text-red-400 text-sm">BẢN THỬ NGHIỆM</p><h1 className="text-4xl font-bold text-white">RIO <span className="text-red-500">Timer</span></h1>
       <p className="text-slate-300 mt-3">Tập theo nhịp của bạn. Lưu giáo án và lịch sử riêng.</p></header>
       {supabase ? <form onSubmit={authenticate} className="space-y-4">
         <h2 className="text-xl">{signup ? 'Tạo tài khoản' : 'Đăng nhập'}</h2>

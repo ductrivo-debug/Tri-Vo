@@ -344,7 +344,7 @@ const App: React.FC = () => {
     return (
         <main className="phone-app text-white font-sans">
             <header className="phone-header">
-                <h1 className="phone-brand">SILVERBACK <span>MMA</span><small>TRAIN AT YOUR PACE</small></h1>
+                <h1 className="phone-brand">RIO <span>Timer</span><small>TRAIN AT YOUR PACE</small></h1>
                 <select
                     value={locale}
                     onChange={(e) => setLocale(e.target.value as keyof typeof translations)}
