@@ -1,3 +1,4 @@
+import { usePersonalState } from './contexts/PersonalData';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import TimerDisplay from './components/TimerDisplay';
 import Controls from './components/Controls';
@@ -24,29 +25,7 @@ import {
 } from './types';
 import { translations } from './translations';
 
-// Custom hook for managing state with localStorage
-const usePersistentState = <T,>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
-    const [state, setState] = useState<T>(() => {
-        try {
-            const storedValue = localStorage.getItem(key);
-            return storedValue ? JSON.parse(storedValue) : defaultValue;
-        } catch (error) {
-            console.error(`Error reading from localStorage key "${key}":`, error);
-            return defaultValue;
-        }
-    });
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(key, JSON.stringify(state));
-        } catch (error) {
-            console.error(`Error writing to localStorage key "${key}":`, error);
-        }
-    }, [key, state]);
-
-    return [state, setState];
-};
-
+const usePersistentState = usePersonalState;
 
 const App: React.FC = () => {
     const { t, locale, setLocale } = useLanguage();
@@ -125,34 +104,6 @@ const App: React.FC = () => {
             wakeLockSentinelRef.current = null;
         }
     }, []);
-
-    // Data migration for exercises without duration
-    useEffect(() => {
-        const migrateExercises = (exercises: Exercise[]): Exercise[] => {
-            return exercises.map(ex => ({
-                ...ex,
-                duration: ex.duration || settings.workTime 
-            }));
-        };
-
-        const needsMigration = (exercises: any[]): boolean => {
-            return exercises && exercises.some(ex => ex.duration === undefined || ex.imageUrl !== undefined);
-        }
-
-        const currentAllExercises = JSON.parse(localStorage.getItem('allExercises') || 'null');
-        if (needsMigration(currentAllExercises)) {
-            console.log("Migrating allExercises to add duration and remove imageUrl...");
-            setAllExercises(migrateExercises(currentAllExercises));
-        }
-
-        const currentPlaylist = JSON.parse(localStorage.getItem('playlist') || 'null');
-        if (needsMigration(currentPlaylist)) {
-            console.log("Migrating playlist to add duration and remove imageUrl...");
-            setPlaylist(migrateExercises(currentPlaylist));
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
 
     const handleNextTrack = useCallback(() => {
         // Logic to play the next track based on playMode
@@ -482,3 +433,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

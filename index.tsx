@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './components/BetaApp';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 const rootElement = document.getElementById('root');
@@ -16,3 +16,4 @@ root.render(
     </LanguageProvider>
   </React.StrictMode>
 );
+
