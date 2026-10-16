@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Exercise, ExerciseCategory } from '../types';
+import { SPORTS } from '../services/WorkoutLibrary';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface CustomExerciseFormModalProps {
@@ -75,6 +76,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
     }, [exerciseToEdit]);
 
     const handleSave = () => {
+        if (duration <= 0) { alert('Thời gian bài tập phải lớn hơn 0 giây.'); return; }
         if (!name.trim()) {
             alert(t('enterExerciseName'));
             return;
@@ -136,7 +138,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
                             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
                         >
                             {Object.values(ExerciseCategory).map(cat => (
-                                <option key={cat} value={cat}>{t(cat)}</option>
+                                <option key={cat} value={cat}>{SPORTS.find(s=>s.id===cat)?.name || t(cat)}</option>
                             ))}
                         </select>
                     </div>

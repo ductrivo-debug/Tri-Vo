@@ -1,5 +1,6 @@
 import React from 'react';
 import { Exercise, TimerPhase } from '../types';
+import { SPORTS, LEVELS } from '../services/WorkoutLibrary';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ExerciseDisplayProps {
@@ -41,11 +42,13 @@ const ExerciseDisplay: React.FC<ExerciseDisplayProps> = ({ exercise, phase }) =>
                         exercise.category === 'MMA' ? 'bg-purple-500 text-white' : 
                         'bg-gray-500 text-white'
                     }`}>
-                        {t(exercise.category)}
+                        {SPORTS.find(s=>s.id===exercise.category)?.name || t(exercise.category)}
                     </span>
                 </div>
                 <h3 className="text-xl font-bold text-white">{exercise.name}</h3>
+                <p className="text-teal-300 mt-1 text-sm">{exercise.level ? LEVELS[exercise.level] + ' · ' : ''}{exercise.target}</p>
                 <p className="text-slate-300 mt-1 text-sm">{exercise.description}</p>
+                {exercise.tip && <p className="text-slate-400 mt-2 text-xs">Lưu ý: {exercise.tip}</p>}
             </div>
         </div>
     );

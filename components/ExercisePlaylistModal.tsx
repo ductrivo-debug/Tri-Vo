@@ -63,10 +63,10 @@ const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist,
                             <h3 className="text-lg font-semibold mb-2 border-b border-slate-700 pb-2">{t('playlist')} ({playlist.length})</h3>
                             <div className="flex-grow overflow-y-auto pr-2 space-y-2">
                                 {playlist.length === 0 && <p className="text-slate-500 text-center py-8">{t('noExercisesInPlaylist')}</p>}
-                                {playlist.map(exercise => (
-                                    <div key={exercise.id} className="bg-slate-700 p-2 rounded-md flex items-center justify-between">
+                                {playlist.map((exercise, index) => (
+                                    <div key={exercise.id + index} className="bg-slate-700 p-2 rounded-md flex items-center justify-between">
                                         <span className="truncate flex-1">{exercise.name} <span className="text-slate-400 text-xs">({formatTime(exercise.duration)})</span></span>
-                                        <button onClick={() => handleRemoveFromPlaylist(exercise.id)} className="ml-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs font-bold">X</button>
+                                        <button onClick={() => onUpdatePlaylist(playlist.filter((_, i) => i !== index))} className="ml-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs font-bold">X</button>
                                     </div>
                                 ))}
                             </div>
@@ -86,7 +86,7 @@ const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist,
                                                 <button onClick={() => handleAddToPlaylist(exercise)} className="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-xs font-bold">+</button>
                                             }
                                             <button onClick={() => openEditForm(exercise)} className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs font-bold">{t('edit')}</button>
-                                            <button onClick={() => handleDeleteExercise(exercise.id)} className="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs font-bold">X</button>
+                                            {!exercise.id.startsWith('lib-') && <button onClick={() => handleDeleteExercise(exercise.id)} className="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs font-bold">X</button>}
                                         </div>
                                     </div>
                                 ))}

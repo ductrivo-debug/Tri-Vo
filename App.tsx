@@ -9,6 +9,8 @@ import HistoryModal from './components/HistoryModal';
 import ExercisePlaylistModal from './components/ExercisePlaylistModal';
 import WorkoutPlansModal from './components/WorkoutPlansModal';
 import MusicModal from './components/MusicModal';
+import TrainingLibraryModal from './components/TrainingLibraryModal';
+import { mergeExercises, resolvePlan, restForRound } from './services/WorkoutLibrary';
 import { useLanguage } from './contexts/LanguageContext';
 import { EXERCISES as defaultExercises } from './constants';
 import SoundService from './services/SoundService';
@@ -50,7 +52,8 @@ const App: React.FC = () => {
 
     const soundSettings = clearSoundSettings(storedSoundSettings);
 
-    const [allExercises, setAllExercises] = usePersistentState<Exercise[]>('allExercises', defaultExercises);
+    const [storedExercises, setAllExercises] = usePersistentState<Exercise[]>('allExercises', defaultExercises);
+    const allExercises = mergeExercises(storedExercises);
     const [playlist, setPlaylist] = usePersistentState<Exercise[]>('playlist', defaultExercises.slice(0, 5));
     const [history, setHistory] = usePersistentState<WorkoutSession[]>('workoutHistory', []);
     const [plans, setPlans] = usePersistentState<WorkoutPlan[]>('workoutPlans', []);
@@ -69,6 +72,7 @@ const App: React.FC = () => {
     const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
     const [isPlansOpen, setIsPlansOpen] = useState(false);
     const [isMusicOpen, setIsMusicOpen] = useState(false);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     
     const timerAudio = useRef(new TimerAudioController());
     const audioRun = useRef(0);
@@ -175,8 +179,9 @@ const App: React.FC = () => {
                     if (round === settings.rounds) break;
 
                     // Rest phase
-                    const isLongRest = settings.longRestFrequency > 0 && round % settings.longRestFrequency === 0;
-                    const restDuration = isLongRest ? settings.longRestTime : settings.restTime;
+                    const rest = restForRound(playlist?.length ? playlist[(round - 1) % playlist.length] : null, settings, round);
+                    const isLongRest = rest.long;
+                    const restDuration = rest.seconds;
                     time += restDuration;
                     if (totalElapsedSeconds < time) {
                         setPhase(isLongRest ? TimerPhase.LONG_REST : TimerPhase.REST);
@@ -224,12 +229,16 @@ const App: React.FC = () => {
                         };
                         setHistory(prev => [newSession, ...prev]);
                     }
-                } else if (currentRound > 0 && settings.longRestFrequency > 0 && currentRound % settings.longRestFrequency === 0) {
-                    setPhase(TimerPhase.LONG_REST);
-                    setTimeLeft(settings.longRestTime);
                 } else {
-                    setPhase(TimerPhase.REST);
-                    setTimeLeft(settings.restTime);
+                    const rest = restForRound(currentExercise, settings, currentRound);
+                    if (rest.seconds === 0) {
+                        setCurrentRound(currentRound + 1);
+                        setPhase(TimerPhase.WORK);
+                        setTimeLeft(nextExercise?.duration ?? settings.workTime);
+                    } else {
+                        setPhase(rest.long ? TimerPhase.LONG_REST : TimerPhase.REST);
+                        setTimeLeft(rest.seconds);
+                    }
                 }
                 break;
             case TimerPhase.REST:
@@ -288,7 +297,7 @@ const App: React.FC = () => {
     const handleAddOrUpdateExercise = (exerciseData: Omit<Exercise, 'id'> | Exercise) => {
         if ('id' in exerciseData) {
             // Editing existing exercise
-            setAllExercises(prev => prev.map(ex => ex.id === exerciseData.id ? exerciseData : ex));
+            setAllExercises(prev => [...prev.filter(ex => ex.id !== exerciseData.id), exerciseData]);
             setPlaylist(prev => prev.map(ex => ex.id === exerciseData.id ? exerciseData : ex));
         } else {
             // Adding new exercise
@@ -301,17 +310,24 @@ const App: React.FC = () => {
     };
     
     const handleLoadPlan = (plan: WorkoutPlan) => {
-        const planExercises = allExercises.filter(ex => plan.exerciseIds.includes(ex.id));
-        setPlaylist(planExercises);
-        setIsPlansOpen(false);
+        try {
+            const planExercises = resolvePlan(plan, allExercises);
+            if (!planExercises.length) { alert('Giáo án chưa có bài tập.'); return; }
+            if (isActive && !window.confirm('Dừng buổi đang tập và nạp giáo án mới?')) return;
+            resetTimer();
+            setPlaylist(planExercises);
+            setSettings({...settings, ...plan.settings, rounds: planExercises.length});
+            setIsPlansOpen(false);
+            setIsLibraryOpen(false);
+        } catch (error) { alert((error as Error).message); }
     };
 
     const totalTime = (() => {
         switch(phase){
             case TimerPhase.PREPARE: return 10;
             case TimerPhase.WORK: return currentExercise?.duration ?? settings.workTime;
-            case TimerPhase.REST: return settings.restTime;
-            case TimerPhase.LONG_REST: return settings.longRestTime;
+            case TimerPhase.REST:
+            case TimerPhase.LONG_REST: return restForRound(currentExercise, settings, currentRound).seconds;
             default: return 0;
         }
     })();
@@ -355,6 +371,7 @@ const App: React.FC = () => {
             </div>
 
             <footer className="w-full">
+                <button onClick={() => setIsLibraryOpen(true)} className="w-full max-w-xl block mx-auto mb-3 rounded-xl bg-teal-600 hover:bg-teal-500 px-4 py-3 font-bold">Thư viện tập luyện · 6 bộ môn</button>
                 <Controls
                     isActive={isActive}
                     onStart={handleStart}
@@ -369,6 +386,16 @@ const App: React.FC = () => {
             </footer>
 
             {/* Modals */}
+            {isLibraryOpen && <TrainingLibraryModal
+                onClose={() => setIsLibraryOpen(false)} onLoad={handleLoadPlan} savedPlans={plans}
+                onSave={plan => setPlans(prev => prev.some(p=>p.id===plan.id) ? prev : [...prev, plan])}
+                onAdd={exercise => {
+                    if (isActive) { alert('Tạm dừng buổi tập trước khi thêm bài.'); return false; }
+                    resetTimer();
+                    setPlaylist(prev => [...prev, exercise]);
+                    setSettings(prev => ({...prev, rounds:playlist.length+1}));
+                    return true;
+                }} />}
             {isSettingsOpen && (
                 <SettingsModal
                     currentSettings={settings}
@@ -403,7 +430,11 @@ const App: React.FC = () => {
                     playlist={playlist}
                     allExercises={allExercises}
                     onClose={() => setIsPlaylistOpen(false)}
-                    onUpdatePlaylist={setPlaylist}
+                    onUpdatePlaylist={next => {
+                        if (isActive) { alert('Tạm dừng buổi tập trước khi đổi danh sách.'); return; }
+                        resetTimer(); setPlaylist(next);
+                        setSettings(prev=>({...prev,rounds:Math.max(1,next.length)}));
+                    }}
                     onAddOrUpdateExercise={handleAddOrUpdateExercise}
                     onDeleteExercise={(id) => setAllExercises(allExercises.filter(ex => ex.id !== id))}
                 />

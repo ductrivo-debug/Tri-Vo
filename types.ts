@@ -10,10 +10,23 @@ export enum ExerciseCategory {
     BOXING = 'BOXING',
     KICKBOXING = 'KICKBOXING',
     MMA = 'MMA',
+    JUMP_ROPE = 'JUMP_ROPE',
+    WALKING = 'WALKING',
+    RUNNING = 'RUNNING',
+    SWIMMING = 'SWIMMING',
+    GYM = 'GYM',
     CUSTOM = 'CUSTOM',
 }
 
+export type TrainingLevel = 'beginner' | 'intermediate' | 'advanced';
+
 export interface Exercise {
+    level?: TrainingLevel;
+    equipment?: string;
+    target?: string;
+    tip?: string;
+    restAfter?: number;
+    stage?: 'warmup' | 'main' | 'cooldown';
     id: string;
     name: string;
     description: string;
@@ -65,6 +78,11 @@ export interface Track {
 }
 
 export interface WorkoutPlan {
+    category?: ExerciseCategory;
+    level?: TrainingLevel;
+    description?: string;
+    guidance?: string;
+    settings?: WorkoutSettings;
     id: string;
     name: string;
     exerciseIds: string[];
