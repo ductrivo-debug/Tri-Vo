@@ -13,7 +13,7 @@ input[type=checkbox] { width:22px;height:22px;vertical-align:middle; }
 .account-strip>span { flex:1;min-width:0;overflow-wrap:anywhere; }
 .account-strip>button { flex-shrink:0;color:#cbd5e1;font-size:11px; }
 .sync-status { min-height:24px;padding:4px 16px;font-size:11px;color:#94a3b8;text-align:left; }
-.phone-app { display:flex;flex-direction:column;align-items:center; padding:8px 16px calc(164px + env(safe-area-inset-bottom)); min-height:calc(100dvh - 78px); }
+.phone-app { display:flex;flex-direction:column;align-items:center; padding:8px 16px 0; min-height:0; }
 .phone-header { width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px; }
 .phone-brand { font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1; }
 .phone-brand span { color:#f87171; }
@@ -30,7 +30,8 @@ input[type=checkbox] { width:22px;height:22px;vertical-align:middle; }
 .session-tools { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;width:100%; }
 .session-tools button { display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;border:1px solid #334155;background:#162236;border-radius:14px;padding:12px;font-size:13px; }
 .session-tools span { color:#94a3b8; }
-.mobile-dock { position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:30;width:100%;max-width:480px;padding:12px 16px calc(6px + env(safe-area-inset-bottom));background:#0f172af5;border-top:1px solid #334155;backdrop-filter:blur(16px); }
+.mobile-dock { position:relative;width:100%;margin-top:10px;padding:12px 0 calc(6px + env(safe-area-inset-bottom));background:#0f172af5;border-top:1px solid #334155;backdrop-filter:blur(16px); }
+.phone-app>footer { position:sticky;bottom:0;z-index:30;background:#0f172a; }
 .mobile-primary { display:flex;gap:10px; }
 .reset-control { display:flex;align-items:center;justify-content:center;width:56px;border:1px solid #475569;border-radius:15px;background:#1e293b;color:#cbd5e1;flex-shrink:0; }
 .start-control { flex:1;display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;border-radius:15px;background:#ef4444;font-size:19px;font-weight:800;color:white; }
