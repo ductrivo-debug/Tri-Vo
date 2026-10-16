@@ -102,7 +102,7 @@ const SoundSettingsModal: React.FC<SoundSettingsModalProps> = ({ currentSettings
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-sm text-white shadow-2xl overflow-y-auto" style={{maxHeight:"90dvh"}}>
                 <h2 className="text-2xl font-bold mb-6 text-center">{t('soundSettings')}</h2>
                 

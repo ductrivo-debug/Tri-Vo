@@ -36,7 +36,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, onClear }
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md text-white shadow-2xl flex flex-col" style={{maxHeight: '80vh'}}>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">{t('workoutHistory')}</h2>
@@ -74,3 +74,4 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, onClear }
 };
 
 export default HistoryModal;
+

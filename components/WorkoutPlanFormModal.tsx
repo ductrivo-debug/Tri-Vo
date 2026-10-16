@@ -17,7 +17,7 @@ export default function WorkoutPlanFormModal({planToEdit,allExercises,onSave,onC
   const data={...planToEdit,name:name.trim(),exerciseIds:ids,...(planToEdit?.settings?{settings:{...planToEdit.settings,rounds:ids.length}}:{})};
   onSave(data);onClose();
  };
- return <div className="fixed inset-0 z-50 bg-black bg-opacity-80 p-3 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Sửa giáo án"><section className="bg-slate-800 rounded-xl p-4 w-full max-w-xl text-white flex flex-col" style={{maxHeight:'94dvh'}}>
+ return <div className="mobile-dialog fixed inset-0 z-50 bg-black bg-opacity-80 p-3 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Sửa giáo án"><section className="bg-slate-800 rounded-xl p-4 w-full max-w-xl text-white flex flex-col" style={{maxHeight:'94dvh'}}>
   <h2 className="text-xl font-bold mb-3">{planToEdit?t('edit'):t('createNewPlan')}</h2>
   <label className="text-sm">{t('planName')}<input value={name} onChange={e=>setName(e.target.value)} className="block w-full rounded bg-slate-700 p-3 mt-1 mb-3" /></label>
   <div className="overflow-y-auto space-y-3"><h3 className="font-semibold">Thứ tự tập · {ids.length} lượt</h3><p className="text-xs text-slate-400">Có thể thêm cùng một bài nhiều lần. Mỗi lượt giữ thời gian tập/nghỉ của bài đó.</p>

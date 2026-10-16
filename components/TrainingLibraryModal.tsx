@@ -16,7 +16,7 @@ export default function TrainingLibraryModal({onClose,onLoad,onSave,onAdd,savedP
  const sequence=resolvePlan(plan,LIBRARY_EXERCISES);
  const saved=savedPlans.some(p=>p.id===plan.id);
  const btn='rounded-lg px-3 py-2 text-sm font-semibold';
- return <div className="fixed inset-0 z-50 bg-black bg-opacity-80 p-2 sm:p-5 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Thư viện tập luyện">
+ return <div className="mobile-dialog fixed inset-0 z-50 bg-black bg-opacity-80 p-2 sm:p-5 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Thư viện tập luyện">
   <section className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl flex flex-col text-white overflow-hidden" style={{maxHeight:'94dvh'}}>
    <header className="p-4 border-b border-slate-700 flex items-start justify-between gap-3">
     <div><p className="text-xs uppercase tracking-widest text-teal-300">Thư viện tập luyện · Beta</p><h2 className="text-2xl font-bold mt-1">Chọn môn. Chọn trình độ.</h2><p className="text-sm text-slate-400 mt-1">6 bộ môn · 3 trình độ · 18 giáo án mẫu</p></div>

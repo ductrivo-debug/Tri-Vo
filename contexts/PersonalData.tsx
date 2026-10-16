@@ -49,7 +49,7 @@ export function PersonalData({ userId, initial, children }: { userId: string | n
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
   return <DataContext.Provider value={{ values, change, scope: userId || "demo" }}>
-    <div className="text-center text-xs text-slate-300 p-2" role="status">{status} {failed && <button className="underline" onClick={flush}>Thử lưu lại</button>}</div>
+    <div className="sync-status" role="status">{status} {failed && <button className="underline" onClick={flush}>Thử lưu lại</button>}</div>
     {children}
   </DataContext.Provider>;
 }

@@ -98,7 +98,7 @@ const CustomExerciseFormModal: React.FC<CustomExerciseFormModalProps> = ({ exerc
     };
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md text-white shadow-2xl">
                 <h2 className="text-2xl font-bold mb-6 text-center">{exerciseToEdit ? t('editExercise') : t('createNewExercise')}</h2>
                 

@@ -67,7 +67,7 @@ export default function BetaApp() {
   }
   if (!ready) return <p className="p-6" role="status">Đang khôi phục đăng nhập…</p>;
   if (session || demo) return <>
-    <div className="flex justify-between gap-3 p-3 bg-slate-800 text-sm">
+    <div className="account-strip">
       <span>{demo ? 'BẢN THỬ · Dữ liệu trên thiết bị này' : session?.user.email}</span>
       <button onClick={async () => {
         if (!window.confirm('Rời phiên tập? Hãy đợi trạng thái “Đã lưu” trước khi tiếp tục.')) return;
@@ -78,7 +78,7 @@ export default function BetaApp() {
     {initial && loadedFor === (demo ? 'demo' : session?.user.id) ? <PersonalData key={demo ? 'demo' : session!.user.id} userId={demo ? null : session!.user.id} initial={initial}><App /></PersonalData>
       : <div className="p-6" role="status">{message || 'Đang tải dữ liệu cá nhân…'} {message && <button className="underline" onClick={() => setRetry(v => v + 1)}>Tải lại</button>}</div>}
   </>;
-  return <main className="min-h-screen bg-slate-900 flex items-center justify-center p-5">
+  return <main className="auth-screen bg-slate-900 flex items-center justify-center p-5">
     <section className="w-full max-w-sm space-y-5">
       <header><p className="text-red-400 text-sm">BẢN THỬ NGHIỆM</p><h1 className="text-4xl font-bold">SILVERBACK <span className="text-red-500">MMA</span></h1>
       <p className="text-slate-300 mt-3">Tập theo nhịp của bạn. Lưu giáo án và lịch sử riêng.</p></header>

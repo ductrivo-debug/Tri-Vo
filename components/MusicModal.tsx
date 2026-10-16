@@ -89,7 +89,7 @@ export default function MusicModal({ isOpen, onClose, service }: {
       setEmbed('https://open.spotify.com/embed/' + match[1] + '/' + match[2]); setError('');
     } catch { setError('Dán link bài hát, album hoặc playlist từ open.spotify.com.'); }
   }
-  return <div className={isOpen ? 'fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4' : 'hidden'} role={isOpen ? 'dialog' : undefined} aria-modal={isOpen || undefined} aria-label="Âm nhạc">
+  return <div className={isOpen ? 'mobile-dialog fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4' : 'hidden'} role={isOpen ? 'dialog' : undefined} aria-modal={isOpen || undefined} aria-label="Âm nhạc">
     <section className="bg-slate-800 rounded-lg p-5 w-full max-w-md text-white overflow-y-auto" style={{maxHeight:'90dvh'}}>
       <header className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Âm nhạc</h2><button aria-label="Đóng âm nhạc" className="text-3xl" onClick={onClose}>×</button></header>
       <div className="flex gap-2 mb-4">

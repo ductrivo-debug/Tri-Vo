@@ -60,25 +60,25 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({ phase, timeLeft, totalTime,
     const phaseColor = getPhaseColor();
 
     return (
-        <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex flex-col items-center justify-center mt-6">
+        <div className="phone-timer">
             <CircularProgress progress={progress} color={phaseColor} />
             <div className="z-10 text-center">
                  <p 
-                    className="text-2xl font-semibold uppercase tracking-widest"
+                    className="timer-phase"
                     style={{ color: phaseColor }}
                  >
                     {t(phase)}
                 </p>
-                <h2 className="text-7xl sm:text-8xl font-mono font-bold my-1 text-white">
+                <h2 className="timer-digits text-white">
                     {formatTime(timeLeft)}
                 </h2>
                 {phase !== TimerPhase.FINISHED && phase !== TimerPhase.PREPARE &&
-                    <p className="text-xl text-slate-400">
+                    <p className="timer-round">
                         {t('round')} {currentRound} / {totalRounds}
                     </p>
                 }
                  {phase === TimerPhase.FINISHED &&
-                    <p className="text-xl text-slate-400">
+                    <p className="timer-round">
                         {t('greatJob')}
                     </p>
                 }

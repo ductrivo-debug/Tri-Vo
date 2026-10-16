@@ -74,6 +74,14 @@ const App: React.FC = () => {
     const [isMusicOpen, setIsMusicOpen] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     
+    const modalOpen = isSettingsOpen || isSoundSettingsOpen || isHistoryOpen || isPlaylistOpen || isPlansOpen || isMusicOpen || isLibraryOpen;
+    useEffect(() => {
+        if (!modalOpen) return;
+        const previous = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = previous; };
+    }, [modalOpen]);
+
     const timerAudio = useRef(new TimerAudioController());
     const audioRun = useRef(0);
 
@@ -334,12 +342,9 @@ const App: React.FC = () => {
 
     // ======== RENDER ========
     return (
-        <main className="bg-slate-900 min-h-screen text-white flex flex-col items-center justify-between p-4 font-sans">
-            <header className="w-full flex flex-col items-center text-center">
-                <h1 className="text-6xl font-extrabold leading-none tracking-tighter">
-                    <span className="text-white block">SILVERBACK</span>
-                    <span className="text-red-500 block -mt-2">MMA</span>
-                </h1>
+        <main className="phone-app text-white font-sans">
+            <header className="phone-header">
+                <h1 className="phone-brand">SILVERBACK <span>MMA</span><small>TRAIN AT YOUR PACE</small></h1>
                 <select
                     value={locale}
                     onChange={(e) => setLocale(e.target.value as keyof typeof translations)}
@@ -371,7 +376,6 @@ const App: React.FC = () => {
             </div>
 
             <footer className="w-full">
-                <button onClick={() => setIsLibraryOpen(true)} className="w-full max-w-xl block mx-auto mb-3 rounded-xl bg-teal-600 hover:bg-teal-500 px-4 py-3 font-bold">Thư viện tập luyện · 6 bộ môn</button>
                 <Controls
                     isActive={isActive}
                     onStart={handleStart}
@@ -382,6 +386,7 @@ const App: React.FC = () => {
                     onOpenPlaylist={() => setIsPlaylistOpen(true)}
                     onOpenPlans={() => setIsPlansOpen(true)}
                     onOpenMusic={() => setIsMusicOpen(true)}
+                    onOpenLibrary={() => setIsLibraryOpen(true)}
                 />
             </footer>
 

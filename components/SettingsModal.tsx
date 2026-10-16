@@ -76,7 +76,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, onSave, 
     const roundOptions = Array.from({ length: 100 }, (_, i) => i + 1);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-sm text-white shadow-2xl">
                 <h2 className="text-2xl font-bold mb-6 text-center">{t('workoutSettings')}</h2>
                 

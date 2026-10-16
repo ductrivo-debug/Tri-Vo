@@ -53,11 +53,11 @@ const ExercisePlaylistModal: React.FC<ExercisePlaylistModalProps> = ({ playlist,
 
     return (
         <>
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="mobile-dialog fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
                 <div className="bg-slate-800 rounded-lg p-6 w-full max-w-3xl text-white shadow-2xl flex flex-col" style={{maxHeight: '90vh'}}>
                     <h2 className="text-2xl font-bold mb-4 text-center">{t('exercisePlaylist')}</h2>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-y-auto">
+                    <div className="playlist-columns grid grid-cols-1 gap-6 flex-grow overflow-y-auto">
                         {/* Current Playlist */}
                         <div className="flex flex-col">
                             <h3 className="text-lg font-semibold mb-2 border-b border-slate-700 pb-2">{t('playlist')} ({playlist.length})</h3>
