@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useRef, useState } from 
 import { supabase } from '../services/supabase';
 
 type Store = Record<string, unknown>;
-type Context = { values: Store; change: (key: string, action: React.SetStateAction<any>, fallback: unknown) => void };
+type Context = { scope: string; values: Store; change: (key: string, action: React.SetStateAction<any>, fallback: unknown) => void };
 const DataContext = createContext<Context | null>(null);
 
 export function PersonalData({ userId, initial, children }: { userId: string | null; initial: Store; children: React.ReactNode }) {
@@ -48,7 +48,7 @@ export function PersonalData({ userId, initial, children }: { userId: string | n
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
-  return <DataContext.Provider value={{ values, change }}>
+  return <DataContext.Provider value={{ values, change, scope: userId || "demo" }}>
     <div className="text-center text-xs text-slate-300 p-2" role="status">{status} {failed && <button className="underline" onClick={flush}>Thử lưu lại</button>}</div>
     {children}
   </DataContext.Provider>;
@@ -61,3 +61,5 @@ export function usePersonalState<T>(key: string, fallback: T): [T, React.Dispatc
   return [(Object.hasOwn(values, key) ? values[key] : fallback) as T, setter];
 }
 
+
+export function usePersonalScope() { const context = useContext(DataContext); if (!context) throw new Error("Missing PersonalData"); return context.scope; }

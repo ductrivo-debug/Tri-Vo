@@ -50,12 +50,6 @@ const App: React.FC = () => {
     const [history, setHistory] = usePersistentState<WorkoutSession[]>('workoutHistory', []);
     const [plans, setPlans] = usePersistentState<WorkoutPlan[]>('workoutPlans', []);
     
-    const [musicPlaylist, setMusicPlaylist] = usePersistentState<Track[]>('musicPlaylist', []);
-    const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-    const [musicIsPlaying, setMusicIsPlaying] = useState(false);
-    const [musicVolume, setMusicVolume] = useState(0.5);
-    const [playMode, setPlayMode] = useState<'SEQUENTIAL' | 'SHUFFLE'>('SEQUENTIAL');
-    
     // Timer state
     const [phase, setPhase] = useState<TimerPhase>(TimerPhase.PREPARE);
     const [timeLeft, setTimeLeft] = useState(10);
@@ -104,16 +98,6 @@ const App: React.FC = () => {
             wakeLockSentinelRef.current = null;
         }
     }, []);
-
-    const handleNextTrack = useCallback(() => {
-        // Logic to play the next track based on playMode
-    }, []);
-
-    // Initialize Music Service
-    useEffect(() => {
-        musicServiceRef.current = new MusicService(() => handleNextTrack());
-        musicServiceRef.current.init();
-    }, [handleNextTrack]);
 
     const resetTimer = useCallback(() => {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -411,23 +395,7 @@ const App: React.FC = () => {
                     onSavePlans={setPlans}
                 />
             )}
-            {isMusicOpen && (
-                <MusicModal
-                    playlist={musicPlaylist}
-                    currentTrack={currentTrack}
-                    isPlaying={musicIsPlaying}
-                    volume={musicVolume}
-                    playMode={playMode}
-                    onAddTracks={(tracks) => setMusicPlaylist(p => [...p, ...tracks])}
-                    onRemoveTrack={(trackId) => setMusicPlaylist(p => p.filter(t => t.id !== trackId))}
-                    onPlayPause={() => {}} // Placeholder
-                    onNext={() => {}} // Placeholder
-                    onPrev={() => {}} // Placeholder
-                    onVolumeChange={setMusicVolume}
-                    onPlayModeChange={setPlayMode}
-                    onClose={() => setIsMusicOpen(false)}
-                />
-            )}
+            <MusicModal isOpen={isMusicOpen} onClose={() => setIsMusicOpen(false)} service={musicServiceRef} />
         </main>
     );
 };
