@@ -12,6 +12,7 @@ import MusicModal from './components/MusicModal';
 import { useLanguage } from './contexts/LanguageContext';
 import { EXERCISES as defaultExercises } from './constants';
 import SoundService from './services/SoundService';
+import { TimerAudioController, cueLabel, clearSoundSettings } from './services/TimerAudio';
 import MusicService from './services/MusicService';
 import {
     WorkoutSettings,
@@ -39,11 +40,15 @@ const App: React.FC = () => {
         longRestFrequency: 4,
     });
     
-    const [soundSettings, setSoundSettings] = usePersistentState<SoundSettings>('soundSettings', {
-        start: { type: SoundType.BELL, volume: 0.5 },
-        end: { type: SoundType.BELL, volume: 0.5 },
-        warning: { type: SoundType.BEEP, volume: 0.3 },
+    const [storedSoundSettings, setSoundSettings] = usePersistentState<SoundSettings>('soundSettings', {
+        start: { type: SoundType.BELL, volume: 0.95 },
+        end: { type: SoundType.BELL, volume: 0.95 },
+        warning: { type: SoundType.BEEP, volume: 0.8 },
+        voiceVolume: 1,
+        profileVersion: 2,
     });
+
+    const soundSettings = clearSoundSettings(storedSoundSettings);
 
     const [allExercises, setAllExercises] = usePersistentState<Exercise[]>('allExercises', defaultExercises);
     const [playlist, setPlaylist] = usePersistentState<Exercise[]>('playlist', defaultExercises.slice(0, 5));
@@ -65,6 +70,9 @@ const App: React.FC = () => {
     const [isPlansOpen, setIsPlansOpen] = useState(false);
     const [isMusicOpen, setIsMusicOpen] = useState(false);
     
+    const timerAudio = useRef(new TimerAudioController());
+    const audioRun = useRef(0);
+
     const intervalRef = useRef<number | null>(null);
     const musicServiceRef = useRef<MusicService | null>(null);
     const wakeLockSentinelRef = useRef<any>(null); // For Screen Wake Lock API
@@ -100,6 +108,10 @@ const App: React.FC = () => {
     }, []);
 
     const resetTimer = useCallback(() => {
+        audioRun.current++;
+        SoundService.cancel();
+        timerAudio.current.reset();
+        musicServiceRef.current?.restoreVolume();
         if (intervalRef.current) clearInterval(intervalRef.current);
         setIsActive(false);
         setPhase(TimerPhase.PREPARE);
@@ -190,27 +202,14 @@ const App: React.FC = () => {
 
     // Phase transition logic
     useEffect(() => {
-        // Warning sounds and countdown
-        const isWarningPhase = phase === TimerPhase.WORK || phase === TimerPhase.REST || phase === TimerPhase.LONG_REST || phase === TimerPhase.PREPARE;
-        if (isWarningPhase && timeLeft <= 10 && timeLeft > 0) {
-            SoundService.speak(String(timeLeft), langCode, soundSettings.warning.volume);
-        }
-        if (timeLeft === 10 && (phase === TimerPhase.WORK || phase === TimerPhase.PREPARE)) {
-            musicServiceRef.current?.duckVolume(); // Duck music volume before a sound
-        }
-
-        if (timeLeft > 0) return;
-
-        musicServiceRef.current?.restoreVolume();
+        if (!isActive || timeLeft > 0) return;
 
         switch (phase) {
             case TimerPhase.PREPARE:
-                SoundService.playSound(soundSettings.start);
                 setPhase(TimerPhase.WORK);
                 setTimeLeft(currentExercise?.duration ?? settings.workTime);
                 break;
             case TimerPhase.WORK:
-                SoundService.playSound(soundSettings.end);
                 if (currentRound >= settings.rounds) {
                     setPhase(TimerPhase.FINISHED);
                     setIsActive(false);
@@ -235,7 +234,6 @@ const App: React.FC = () => {
                 break;
             case TimerPhase.REST:
             case TimerPhase.LONG_REST:
-                SoundService.playSound(soundSettings.start);
                 const nextRound = currentRound + 1;
                 setCurrentRound(nextRound);
                 const nextExerciseForWork = playlist && playlist.length > 0 ? playlist[(nextRound - 1) % playlist.length] : null;
@@ -248,9 +246,30 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [timeLeft, phase, isActive, currentRound, settings, soundSettings, sessionStartTime, setHistory, playlist, releaseWakeLock]);
 
+    // Audio runs once per phase/tick and never while paused or before Start.
+    useEffect(() => {
+        const cue = timerAudio.current.next(phase, currentRound, timeLeft, isActive);
+        if (!cue || (cue.kind === 'countdown' && SoundService.isBusy())) return;
+        const setting = cue.kind === 'work' ? soundSettings.start
+            : (cue.kind === 'rest' || cue.kind === 'longRest' || cue.kind === 'finish') ? soundSettings.end
+            : soundSettings.warning;
+        const run = ++audioRun.current;
+        musicServiceRef.current?.duckVolume();
+        void SoundService.cue(cue.kind, setting, cueLabel(cue, locale), langCode, soundSettings.voiceVolume ?? 1)
+            .finally(() => { if (run === audioRun.current) musicServiceRef.current?.restoreVolume(); });
+    }, [phase, currentRound, timeLeft, isActive, locale, langCode, soundSettings]);
+
+    useEffect(() => () => {
+        audioRun.current++;
+        SoundService.cancel();
+        musicServiceRef.current?.restoreVolume();
+        void releaseWakeLock();
+    }, [releaseWakeLock]);
+
     // ======== HANDLERS ========
     const handleStart = () => {
-        if (phase === TimerPhase.FINISHED) resetTimer();
+        void SoundService.unlock();
+        if (phase === TimerPhase.FINISHED) { resetTimer(); setSessionStartTime(Date.now()); }
         setIsActive(true);
         requestWakeLock();
         if (!sessionStartTime) {
@@ -259,6 +278,9 @@ const App: React.FC = () => {
     };
 
     const handlePause = () => {
+        audioRun.current++;
+        SoundService.cancel();
+        musicServiceRef.current?.restoreVolume();
         setIsActive(false);
         releaseWakeLock();
     };

@@ -51,6 +51,8 @@ export interface SoundSetting {
 }
 
 export interface SoundSettings {
+    voiceVolume?: number;
+    profileVersion?: number;
     start: SoundSetting;
     end: SoundSetting;
     warning: SoundSetting;
